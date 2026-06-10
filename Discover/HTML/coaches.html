@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Browse Players — ScoutLink</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="css/dashboard.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="dashboard-page">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="index.html" class="logo sidebar-logo">Scout<span>Link</span></a>
+    <nav class="sidebar-nav">
+      <a href="#" class="sidebar-link">
+        <span class="sidebar-icon">📋</span> My Dashboard
+      </a>
+      <a href="coaches.html" class="sidebar-link active">
+        <span class="sidebar-icon">🔍</span> Browse Players
+      </a>
+      <a href="#" class="sidebar-link">
+        <span class="sidebar-icon">✅</span> My Assessments
+      </a>
+      <a href="#" class="sidebar-link">
+        <span class="sidebar-icon">💬</span> Messages
+      </a>
+      <a href="#" class="sidebar-link">
+        <span class="sidebar-icon">⚙️</span> Settings
+      </a>
+    </nav>
+    <button class="sidebar-logout" onclick="logout()">Log Out</button>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="dashboard-main">
+    <header class="topbar">
+      <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-right">
+        <span class="topbar-greeting">Coach Dashboard</span>
+        <div class="topbar-avatar">CD</div>
+      </div>
+    </header>
+
+    <section class="dash-section">
+      <div class="section-header">
+        <h2 class="section-label" style="font-size:22px;">Browse Players</h2>
+        <p style="color:var(--muted);font-size:14px;" id="resultCount">Showing all players</p>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label>Position</label>
+          <select id="filterPosition" onchange="applyFilters()">
+            <option value="">All Positions</option>
+            <option>Goalkeeper</option>
+            <option>Defender</option>
+            <option>Midfielder</option>
+            <option>Striker</option>
+            <option>Winger</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Province</label>
+          <select id="filterProvince" onchange="applyFilters()">
+            <option value="">All Provinces</option>
+            <option>Harare</option>
+            <option>Bulawayo</option>
+            <option>Manicaland</option>
+            <option>Mashonaland Central</option>
+            <option>Mashonaland East</option>
+            <option>Mashonaland West</option>
+            <option>Masvingo</option>
+            <option>Matabeleland North</option>
+            <option>Matabeleland South</option>
+            <option>Midlands</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Age Range</label>
+          <select id="filterAge" onchange="applyFilters()">
+            <option value="">Any Age</option>
+            <option value="u17">Under 17</option>
+            <option value="u21">17 – 21</option>
+            <option value="u26">22 – 26</option>
+            <option value="senior">27+</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Search</label>
+          <input type="text" id="filterSearch" placeholder="Name or club..." oninput="applyFilters()"/>
+        </div>
+        <button class="btn btn-ghost" onclick="clearFilters()">Clear Filters</button>
+      </div>
+
+      <!-- PLAYER GRID -->
+      <div class="player-grid" id="playerGrid">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="empty-state hidden" id="noResults">
+        <p>🔍</p>
+        <p>No players match your filters. Try adjusting the criteria.</p>
+      </div>
+    </section>
+
+    <!-- PLAYER MODAL -->
+    <div class="modal-overlay hidden" id="modalOverlay" onclick="closeModal()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div class="modal-header">
+          <div class="modal-avatar" id="modalAvatar">PN</div>
+          <div>
+            <h2 id="modalName">Player Name</h2>
+            <p id="modalMeta">Position · Province · Age</p>
+            <div class="modal-badges" id="modalBadges"></div>
+          </div>
+        </div>
+
+        <div class="modal-body">
+          <p class="modal-section-label">Bio</p>
+          <p id="modalBio" class="modal-bio">—</p>
+
+          <p class="modal-section-label">Highlight Videos</p>
+          <div id="modalVideos" class="modal-videos"></div>
+
+          <p class="modal-section-label">Leave an Assessment</p>
+          <div class="assess-form">
+            <textarea id="assessmentText" rows="4" placeholder="Write your assessment of this player..."></textarea>
+            <div class="assess-actions">
+              <div class="rating-group">
+                <label>Rating:</label>
+                <div class="star-rating" id="starRating">
+                  <span class="star" data-val="1">★</span>
+                  <span class="star" data-val="2">★</span>
+                  <span class="star" data-val="3">★</span>
+                  <span class="star" data-val="4">★</span>
+                  <span class="star" data-val="5">★</span>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="submitAssessment()">Submit Assessment</button>
+            </div>
+          </div>
+          <div class="success-msg hidden" id="assessSuccess">✅ Assessment submitted! The player will be notified.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/coaches.js"></script>
+</body>
+</html>

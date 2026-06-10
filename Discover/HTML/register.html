@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register — ScoutLink</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="auth-page">
+
+  <nav class="navbar navbar-minimal">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">Scout<span>Link</span></a>
+      <a href="login.html" class="btn btn-outline">Log In</a>
+    </div>
+  </nav>
+
+  <main class="auth-main">
+
+    <!-- STEP 1: Role Selection -->
+    <div class="auth-card" id="stepRole">
+      <p class="step-tag">Step 1 of 3</p>
+      <h2 class="auth-title">Join ScoutLink</h2>
+      <p class="auth-sub">Who are you registering as?</p>
+
+      <div class="role-cards">
+        <button class="role-card" id="rolePlayer" onclick="selectRole('player')">
+          <div class="role-icon">⚽</div>
+          <h3>Player</h3>
+          <p>Upload your highlight videos and get assessed by verified coaches across Zimbabwe.</p>
+          <span class="role-select-indicator">Select</span>
+        </button>
+        <button class="role-card" id="roleCoach" onclick="selectRole('coach')">
+          <div class="role-icon">📋</div>
+          <h3>Coach</h3>
+          <p>Browse player profiles, watch footage, and discover talent from anywhere in the country.</p>
+          <span class="role-select-indicator">Select</span>
+        </button>
+      </div>
+
+      <button class="btn btn-primary btn-lg btn-full" id="nextToStep2" onclick="goToStep(2)" disabled>Continue</button>
+      <p class="auth-footer">Already have an account? <a href="login.html">Log in</a></p>
+    </div>
+
+    <!-- STEP 2: Personal Info -->
+    <div class="auth-card hidden" id="stepInfo">
+      <p class="step-tag">Step 2 of 3</p>
+      <h2 class="auth-title" id="step2Title">Player Details</h2>
+      <p class="auth-sub">Tell us about yourself.</p>
+
+      <div class="form-group">
+        <label for="fullName">Full Name</label>
+        <input type="text" id="fullName" placeholder="e.g. Thabo Nkosi"/>
+      </div>
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" placeholder="you@example.com"/>
+      </div>
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" placeholder="+27 82 000 0000"/>
+      </div>
+      <div class="form-group">
+        <label for="province">Province</label>
+        <select id="province">
+          <option value="">Select your province</option>
+          <option>Harare</option>
+          <option>Bulawayo</option>
+          <option>Manicaland</option>
+          <option>Mashonaland Central</option>
+          <option>Mashonaland East</option>
+          <option>Mashonaland West</option>
+          <option>Masvingo</option>
+          <option>Matabeleland North</option>
+          <option>Matabeleland South</option>
+        </select>
+      </div>
+
+      <!-- Player-only fields -->
+      <div id="playerFields">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="age">Age</label>
+            <input type="number" id="age" placeholder="19" min="10" max="45"/>
+          </div>
+          <div class="form-group">
+            <label for="position">Position</label>
+            <select id="position">
+              <option value="">Select position</option>
+              <option>Goalkeeper</option>
+              <option>Defender</option>
+              <option>Midfielder</option>
+              <option>Striker</option>
+              <option>Winger</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="currentTeam">Current Team / Club (if any)</label>
+          <input type="text" id="currentTeam" placeholder="e.g. Dynamos FC"/>
+        </div>
+      </div>
+
+      <!-- Coach-only fields -->
+      <div id="coachFields" class="hidden">
+        <div class="form-group">
+          <label for="coachTitle">Coaching Title / Role</label>
+          <input type="text" id="coachTitle" placeholder="e.g. Head Coach, Academy Director"/>
+        </div>
+        <div class="form-group">
+          <label for="coachClub">Club / Academy</label>
+          <input type="text" id="coachClub" placeholder="e.g. CAPS United Academy"/>
+        </div>
+        <div class="form-group">
+          <label for="license">Coaching License (if any)</label>
+          <select id="license">
+            <option value="">Select license level</option>
+            <option>CAF License A</option>
+            <option>CAF License B</option>
+            <option>CAF License C</option>
+            <option>ZIFA Certificate</option>
+            <option>UEFA Pro License</option>
+            <option>No formal license</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goToStep(1)">← Back</button>
+        <button class="btn btn-primary btn-lg" onclick="goToStep(3)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Password & Confirm -->
+    <div class="auth-card hidden" id="stepPassword">
+      <p class="step-tag">Step 3 of 3</p>
+      <h2 class="auth-title">Set Your Password</h2>
+      <p class="auth-sub">Almost there — secure your account.</p>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="At least 8 characters"/>
+        <div class="password-strength" id="strengthBar">
+          <div class="strength-fill" id="strengthFill"></div>
+        </div>
+        <p class="strength-label" id="strengthLabel"></p>
+      </div>
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <input type="password" id="confirmPassword" placeholder="Repeat your password"/>
+        <p class="field-error hidden" id="passwordError">Passwords do not match.</p>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <input type="checkbox" id="terms"/>
+        <label for="terms">I agree to the <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a></label>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goToStep(2)">← Back</button>
+        <button class="btn btn-primary btn-lg" onclick="submitRegistration()">Create Account</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS STATE -->
+    <div class="auth-card hidden" id="stepSuccess">
+      <div class="success-icon">🎉</div>
+      <h2 class="auth-title">You're in!</h2>
+      <p class="auth-sub" id="successMessage">Your player profile has been created. Start building it now.</p>
+      <a href="login.html" class="btn btn-primary btn-lg btn-full">Go to Dashboard</a>
+    </div>
+
+  </main>
+
+  <script src="js/register.js"></script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Player Dashboard — ScoutLink</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="css/dashboard.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="dashboard-page">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="index.html" class="logo sidebar-logo">Scout<span>Link</span></a>
+    <nav class="sidebar-nav">
+      <a href="player-dashboard.html" class="sidebar-link active">
+        <span class="sidebar-icon">⚽</span> My Profile
+      </a>
+      <a href="#videos" class="sidebar-link">
+        <span class="sidebar-icon">🎬</span> My Videos
+      </a>
+      <a href="#assessments" class="sidebar-link">
+        <span class="sidebar-icon">📋</span> Assessments
+      </a>
+      <a href="coaches.html" class="sidebar-link">
+        <span class="sidebar-icon">🔍</span> Browse Coaches
+      </a>
+      <a href="#messages" class="sidebar-link">
+        <span class="sidebar-icon">💬</span> Messages
+        <span class="notif-dot">2</span>
+      </a>
+      <a href="#settings" class="sidebar-link">
+        <span class="sidebar-icon">⚙️</span> Settings
+      </a>
+    </nav>
+    <button class="sidebar-logout" onclick="logout()">Log Out</button>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="dashboard-main">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-right">
+        <span class="topbar-greeting" id="topbarGreeting">Welcome back!</span>
+        <div class="topbar-avatar" id="topbarAvatar">PN</div>
+      </div>
+    </header>
+
+    <!-- PROFILE SECTION -->
+    <section class="dash-section" id="profile">
+      <div class="profile-card">
+        <div class="profile-left">
+          <div class="profile-avatar" id="profileAvatar">PN</div>
+          <div class="profile-info">
+            <h2 id="profileName">Player Name</h2>
+            <p id="profileMeta">Position · Province</p>
+            <div class="profile-badges">
+              <span class="badge badge-green" id="profilePosition">—</span>
+              <span class="badge badge-blue" id="profileProvince">—</span>
+              <span class="badge badge-yellow" id="profileAge">—</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-outline" onclick="toggleEditProfile()">Edit Profile</button>
+      </div>
+
+      <!-- Edit Profile Form -->
+      <div class="edit-form hidden" id="editProfileForm">
+        <h3 class="section-label">Edit Your Profile</h3>
+        <div class="edit-grid">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="editName" placeholder="Your full name"/>
+          </div>
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="editAge" placeholder="Age" min="10" max="45"/>
+          </div>
+          <div class="form-group">
+            <label>Position</label>
+            <select id="editPosition">
+              <option value="">Select position</option>
+              <option>Goalkeeper</option>
+              <option>Defender</option>
+              <option>Midfielder</option>
+              <option>Striker</option>
+              <option>Winger</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Province</label>
+            <select id="editProvince">
+              <option value="">Select province</option>
+              <option>Harare</option>
+              <option>Bulawayo</option>
+              <option>Manicaland</option>
+              <option>Mashonaland Central</option>
+              <option>Mashonaland East</option>
+              <option>Mashonaland West</option>
+              <option>Masvingo</option>
+              <option>Matabeleland North</option>
+              <option>Matabeleland South</option>
+              <option>Midlands</option>
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <label>Current Club / Team</label>
+            <input type="text" id="editClub" placeholder="e.g. Dynamos FC, School team, or Free agent"/>
+          </div>
+          <div class="form-group full-width">
+            <label>Bio (tell coaches about yourself)</label>
+            <textarea id="editBio" rows="3" placeholder="e.g. Fast, technical winger with 3 years of competitive experience..."></textarea>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="toggleEditProfile()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS ROW -->
+    <section class="stats-row">
+      <div class="stat-card">
+        <span class="stat-card-num" id="statViews">0</span>
+        <span class="stat-card-label">Profile Views</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-num" id="statVideos">0</span>
+        <span class="stat-card-label">Videos Uploaded</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-num" id="statAssessments">0</span>
+        <span class="stat-card-label">Assessments</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-num" id="statMessages">0</span>
+        <span class="stat-card-label">Messages</span>
+      </div>
+    </section>
+
+    <!-- VIDEOS SECTION -->
+    <section class="dash-section" id="videos">
+      <div class="section-header">
+        <h3 class="section-label">My Highlight Videos</h3>
+        <button class="btn btn-primary" onclick="toggleUploadForm()">+ Add Video</button>
+      </div>
+
+      <!-- Upload Form -->
+      <div class="upload-form hidden" id="uploadForm">
+        <div class="edit-grid">
+          <div class="form-group full-width">
+            <label>Video Title</label>
+            <input type="text" id="videoTitle" placeholder="e.g. Match Highlights vs Dynamos U20"/>
+          </div>
+          <div class="form-group full-width">
+            <label>YouTube or Vimeo Link</label>
+            <input type="url" id="videoUrl" placeholder="https://youtube.com/watch?v=..."/>
+          </div>
+          <div class="form-group full-width">
+            <label>Description (optional)</label>
+            <textarea id="videoDesc" rows="2" placeholder="What does this video show? Goals, dribbles, defending..."></textarea>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="toggleUploadForm()">Cancel</button>
+          <button class="btn btn-primary" onclick="addVideo()">Upload Video</button>
+        </div>
+      </div>
+
+      <!-- Video List -->
+      <div class="video-grid" id="videoGrid">
+        <div class="empty-state" id="videosEmpty">
+          <p>🎬</p>
+          <p>No videos yet. Add your first highlight reel so coaches can see your talent!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ASSESSMENTS SECTION -->
+    <section class="dash-section" id="assessments">
+      <h3 class="section-label">Coach Assessments</h3>
+      <div id="assessmentsList">
+        <div class="empty-state" id="assessmentsEmpty">
+          <p>📋</p>
+          <p>No assessments yet. Once coaches view your profile and videos, their feedback will appear here.</p>
+        </div>
+        <!-- Demo assessment -->
+        <div class="assessment-card" id="demoAssessment">
+          <div class="assessment-header">
+            <div class="assessment-coach-avatar">CD</div>
+            <div>
+              <strong>Coach Dlamini</strong>
+              <span>CAPS United Academy · Harare</span>
+            </div>
+            <span class="badge badge-green">Positive</span>
+          </div>
+          <p class="assessment-body">"Strong first touch and excellent spatial awareness. Moves well off the ball. Recommend this player for regional U21 trials. Keep working on left foot delivery."</p>
+          <p class="assessment-date">12 June 2025</p>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- end dashboard-main -->
+
+  <script src="js/player-dashboard.js"></script>
+</body>
+</html>

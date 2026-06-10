@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ScoutLink — Connect Players with Coaches</title>
+  <link rel="stylesheet" href="CSS/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">Scout<span>Link</span></a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#for-players">Players</a></li>
+        <li><a href="#for-coaches">Coaches</a></li>
+        <li><a href="register.html" class="btn btn-outline">Register</a></li>
+        <li><a href="login.html" class="btn btn-primary">Log In</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <p class="hero-eyebrow">Zimbabwe's Soccer Scouting Platform</p>
+      <h1 class="hero-title">Your Talent<br/>Deserves to<br/><span>Be Seen.</span></h1>
+      <p class="hero-sub">Players upload. Coaches assess. No travel required. ScoutLink connects local talent with national-level coaches — wherever you are.</p>
+      <div class="hero-cta">
+        <a href="register.html?role=player" class="btn btn-primary btn-lg">Join as a Player</a>
+        <a href="register.html?role=coach" class="btn btn-ghost btn-lg">Join as a Coach</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">1,200+</span><span class="stat-label">Players Registered</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">340+</span><span class="stat-label">Verified Coaches</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">10</span><span class="stat-label">Provinces Covered</span></div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="video-card">
+        <div class="video-thumb">
+          <div class="play-btn">▶</div>
+          <div class="video-label">Highlight Reel</div>
+        </div>
+        <div class="video-info">
+          <strong>Thabo Nkosi</strong>
+          <span>Striker · Harare · 19 yrs</span>
+          <div class="badge-row">
+            <span class="badge badge-green">3 Coach Views</span>
+            <span class="badge badge-blue">Assessed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section" id="how-it-works">
+    <div class="container">
+      <p class="section-eyebrow">The Process</p>
+      <h2 class="section-title">From Pitch to Profile in Minutes</h2>
+      <div class="steps-grid">
+        <div class="step">
+          <div class="step-icon">👤</div>
+          <h3>Create Your Profile</h3>
+          <p>Sign up as a Player or Coach. Fill in your position, province, age, and career details. Verification badge issued to coaches.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon">🎬</div>
+          <h3>Upload Your Videos</h3>
+          <p>Players upload highlight reels or match footage directly to their profile. Coaches can browse at any time.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon">🔍</div>
+          <h3>Get Assessed</h3>
+          <p>Coaches filter players by position, age, and province — then leave detailed written assessments on profiles.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon">🤝</div>
+          <h3>Connect & Grow</h3>
+          <p>Players and coaches message each other, arrange trials, and build professional relationships — all on the platform.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOR PLAYERS -->
+  <section class="section section-dark" id="for-players">
+    <div class="container split">
+      <div class="split-text">
+        <p class="section-eyebrow light">For Players</p>
+        <h2 class="section-title">Stop Waiting for a Chance. Create One.</h2>
+        <p class="split-body">Talent is everywhere in Zimbabwe. The gap is visibility. ScoutLink gives every player — from Harare to Bulawayo, Mutare to Gweru — the same platform to showcase their skill to coaches across the country.</p>
+        <ul class="feature-list">
+          <li>✅ Build a professional player profile</li>
+          <li>✅ Upload unlimited highlight videos</li>
+          <li>✅ Receive written assessments from verified coaches</li>
+          <li>✅ Get notified when coaches view your profile</li>
+          <li>✅ Message coaches directly</li>
+        </ul>
+        <a href="register.html?role=player" class="btn btn-primary btn-lg">Create Player Profile</a>
+      </div>
+      <div class="split-visual player-card-demo">
+        <div class="demo-card">
+          <div class="demo-avatar">TN</div>
+          <div class="demo-info">
+            <strong>Thabo Nkosi</strong>
+            <span>Striker · Mbare, Harare</span>
+            <div class="demo-stats">
+              <span>Age: 19</span>
+              <span>Videos: 4</span>
+              <span>Views: 12</span>
+            </div>
+          </div>
+          <div class="demo-assessment">
+            <p class="assess-label">Coach Assessment</p>
+            <p class="assess-text">"Excellent first touch and pace off the mark. Recommend for regional trials."</p>
+            <span class="assess-coach">— Coach Dlamini, CAPS United Academy</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOR COACHES -->
+  <section class="section" id="for-coaches">
+    <div class="container split reverse">
+      <div class="split-visual coach-browse-demo">
+        <div class="filter-demo">
+          <p class="filter-label">Filter Players</p>
+          <div class="filter-tags">
+            <span class="tag active">Striker</span>
+            <span class="tag">Midfielder</span>
+            <span class="tag">Goalkeeper</span>
+          </div>
+          <div class="filter-tags">
+            <span class="tag active">Harare</span>
+            <span class="tag">Bulawayo</span>
+            <span class="tag">Mutare</span>
+          </div>
+          <div class="filter-tags">
+            <span class="tag active">16–21 yrs</span>
+            <span class="tag">22–26 yrs</span>
+          </div>
+          <div class="player-results">
+            <div class="result-row"><div class="result-avatar">TN</div><div><strong>Thabo N.</strong><span>Striker · 19</span></div><span class="badge badge-green">New Video</span></div>
+            <div class="result-row"><div class="result-avatar">LM</div><div><strong>Lungelo M.</strong><span>Striker · 20</span></div><span class="badge badge-blue">Assessed</span></div>
+            <div class="result-row"><div class="result-avatar">KD</div><div><strong>Karabo D.</strong><span>Striker · 17</span></div><span class="badge badge-yellow">Awaiting</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="split-text">
+        <p class="section-eyebrow">For Coaches</p>
+        <h2 class="section-title">Find the Right Talent. Anywhere in the Country.</h2>
+        <p class="split-body">Stop relying on expensive scouting trips or word-of-mouth. Browse a database of verified player profiles, watch their footage on your own time, and assess the ones worth pursuing.</p>
+        <ul class="feature-list">
+          <li>✅ Verified coach badge builds player trust</li>
+          <li>✅ Filter by position, age, and province</li>
+          <li>✅ Watch player videos at your own pace</li>
+          <li>✅ Leave detailed written assessments</li>
+          <li>✅ Invite players to trials directly</li>
+        </ul>
+        <a href="register.html?role=coach" class="btn btn-primary btn-lg">Join as a Coach</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BANNER -->
+  <section class="cta-banner">
+    <div class="container cta-inner">
+      <h2>Ready to change the game?</h2>
+      <p>Whether you're chasing a dream or building a team — ScoutLink is where it starts.</p>
+      <div class="cta-buttons">
+        <a href="register.html?role=player" class="btn btn-primary btn-lg">I'm a Player</a>
+        <a href="register.html?role=coach" class="btn btn-outline-white btn-lg">I'm a Coach</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <a href="index.html" class="logo">Scout<span>Link</span></a>
+      <p>Connecting Zimbabwean soccer talent with coaches — nationally.</p>
+      <p class="footer-copy">© 2025 ScoutLink. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

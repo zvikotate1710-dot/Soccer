@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Log In — ScoutLink</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="auth-page">
+
+  <nav class="navbar navbar-minimal">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">Scout<span>Link</span></a>
+      <a href="register.html" class="btn btn-primary">Register</a>
+    </div>
+  </nav>
+
+  <main class="auth-main">
+    <div class="auth-card" id="loginCard">
+      <h2 class="auth-title">Welcome back</h2>
+      <p class="auth-sub">Log in to your ScoutLink account.</p>
+
+      <div class="form-group">
+        <label for="loginEmail">Email Address</label>
+        <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email"/>
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">
+          Password
+          <a href="#" class="forgot-link">Forgot password?</a>
+        </label>
+        <div class="password-input-wrap">
+          <input type="password" id="loginPassword" placeholder="Your password" autocomplete="current-password"/>
+          <button class="toggle-pw" onclick="togglePassword()" type="button" aria-label="Show password">👁</button>
+        </div>
+        <p class="field-error hidden" id="loginError">Incorrect email or password. Try again.</p>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <input type="checkbox" id="rememberMe"/>
+        <label for="rememberMe">Remember me</label>
+      </div>
+
+      <button class="btn btn-primary btn-lg btn-full" onclick="handleLogin()">Log In</button>
+
+      <div class="divider"><span>or</span></div>
+
+      <p class="auth-footer">Don't have an account? <a href="register.html">Register here</a></p>
+    </div>
+
+    <!-- Role selector after "login" -->
+    <div class="auth-card hidden" id="dashboardPrompt">
+      <div class="success-icon">✅</div>
+      <h2 class="auth-title">Logged in!</h2>
+      <p class="auth-sub">Where would you like to go?</p>
+      <div class="dashboard-links">
+        <a href="#" class="dashboard-btn">
+          <span>⚽</span>
+          <div>
+            <strong>Player Dashboard</strong>
+            <p>Manage your profile and videos</p>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+        <a href="#" class="dashboard-btn">
+          <span>📋</span>
+          <div>
+            <strong>Coach Dashboard</strong>
+            <p>Browse players and assessments</p>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/login.js"></script>
+</body>
+</html>
