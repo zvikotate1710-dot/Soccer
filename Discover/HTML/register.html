@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Register — ScoutLink</title>
-  <link rel="stylesheet" href="css/style.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
 </head>
+
 <body class="auth-page">
 
   <nav class="navbar navbar-minimal">
@@ -51,15 +54,15 @@
 
       <div class="form-group">
         <label for="fullName">Full Name</label>
-        <input type="text" id="fullName" placeholder="e.g. Thabo Nkosi"/>
+        <input type="text" id="fullName" placeholder="e.g. Thabo Nkosi" />
       </div>
       <div class="form-group">
         <label for="email">Email Address</label>
-        <input type="email" id="email" placeholder="you@example.com"/>
+        <input type="email" id="email" placeholder="you@example.com" />
       </div>
       <div class="form-group">
         <label for="phone">Phone Number</label>
-        <input type="tel" id="phone" placeholder="+27 82 000 0000"/>
+        <input type="tel" id="phone" placeholder="+27 82 000 0000" />
       </div>
       <div class="form-group">
         <label for="province">Province</label>
@@ -82,7 +85,7 @@
         <div class="form-row">
           <div class="form-group">
             <label for="age">Age</label>
-            <input type="number" id="age" placeholder="19" min="10" max="45"/>
+            <input type="number" id="age" placeholder="19" min="10" max="45" />
           </div>
           <div class="form-group">
             <label for="position">Position</label>
@@ -98,7 +101,7 @@
         </div>
         <div class="form-group">
           <label for="currentTeam">Current Team / Club (if any)</label>
-          <input type="text" id="currentTeam" placeholder="e.g. Dynamos FC"/>
+          <input type="text" id="currentTeam" placeholder="e.g. Dynamos FC" />
         </div>
       </div>
 
@@ -106,11 +109,11 @@
       <div id="coachFields" class="hidden">
         <div class="form-group">
           <label for="coachTitle">Coaching Title / Role</label>
-          <input type="text" id="coachTitle" placeholder="e.g. Head Coach, Academy Director"/>
+          <input type="text" id="coachTitle" placeholder="e.g. Head Coach, Academy Director" />
         </div>
         <div class="form-group">
           <label for="coachClub">Club / Academy</label>
-          <input type="text" id="coachClub" placeholder="e.g. CAPS United Academy"/>
+          <input type="text" id="coachClub" placeholder="e.g. CAPS United Academy" />
         </div>
         <div class="form-group">
           <label for="license">Coaching License (if any)</label>
@@ -140,7 +143,7 @@
 
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" id="password" placeholder="At least 8 characters"/>
+        <input type="password" id="password" placeholder="At least 8 characters" />
         <div class="password-strength" id="strengthBar">
           <div class="strength-fill" id="strengthFill"></div>
         </div>
@@ -148,12 +151,12 @@
       </div>
       <div class="form-group">
         <label for="confirmPassword">Confirm Password</label>
-        <input type="password" id="confirmPassword" placeholder="Repeat your password"/>
+        <input type="password" id="confirmPassword" placeholder="Repeat your password" />
         <p class="field-error hidden" id="passwordError">Passwords do not match.</p>
       </div>
 
       <div class="form-group checkbox-group">
-        <input type="checkbox" id="terms"/>
+        <input type="checkbox" id="terms" />
         <label for="terms">I agree to the <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a></label>
       </div>
 
@@ -175,4 +178,5 @@
 
   <script src="js/register.js"></script>
 </body>
+
 </html>
