@@ -503,6 +503,7 @@ input, select, button { font-family: var(--font-body); }
   transition: border-color var(--transition);
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
 }
 .form-group input::placeholder { color: var(--muted); }
 .form-group input:focus,
