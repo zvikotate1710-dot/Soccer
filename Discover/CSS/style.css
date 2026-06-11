@@ -589,8 +589,10 @@ input, select, button { font-family: var(--font-body); }
 .hidden { display: none !important; }
 
 /* =============================================
-   RESPONSIVE
+   MEDIA QUERIES — SCOUTLINK
    ============================================= */
+
+
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; text-align: center; padding: 60px 24px; }
   .hero-visual { display: none; }
