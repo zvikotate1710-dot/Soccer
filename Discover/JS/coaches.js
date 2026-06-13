@@ -229,3 +229,262 @@ function setEl(id, text) {
   const el = document.getElementById(id);
   if (el) el.textContent = text;
 }
+
+/* =============================================
+   SIDEBAR ACTIVE STATE
+   ============================================= */
+function setActive(el) {
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('sidebar').classList.remove('open');
+}
+ 
+/* =============================================
+   COACH DASHBOARD — load profile info
+   ============================================= */
+window.addEventListener('DOMContentLoaded', () => {
+  const stored = localStorage.getItem('scoutlink_user');
+  if (stored) {
+    const user = JSON.parse(stored);
+ 
+    // Top bar avatar & greeting
+    const initials = (user.name || 'CD').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+    const avatar = document.querySelector('.topbar-avatar');
+    if (avatar) avatar.textContent = initials;
+ 
+    // Dashboard profile card
+    const coachAvatar = document.getElementById('coachAvatar');
+    if (coachAvatar) coachAvatar.textContent = initials;
+    const coachName = document.getElementById('coachName');
+    if (coachName) coachName.textContent = user.name || 'Coach';
+    const coachMeta = document.getElementById('coachMeta');
+    if (coachMeta) coachMeta.textContent = `${user.coachTitle || 'Coach'} · ${user.coachClub || '—'}`;
+    const badgeTitle = document.getElementById('coachBadgeTitle');
+    if (badgeTitle) badgeTitle.textContent = user.coachTitle || 'Coach';
+    const badgeProv = document.getElementById('coachBadgeProvince');
+    if (badgeProv) badgeProv.textContent = user.province || '—';
+ 
+    // Pre-fill settings
+    const sName = document.getElementById('coachSettingsName');
+    if (sName) sName.value = user.name || '';
+    const sEmail = document.getElementById('coachSettingsEmail');
+    if (sEmail) sEmail.value = user.email || '';
+    const sTitle = document.getElementById('coachSettingsTitle');
+    if (sTitle) sTitle.value = user.coachTitle || '';
+    const sClub = document.getElementById('coachSettingsClub');
+    if (sClub) sClub.value = user.coachClub || '';
+    const sProv = document.getElementById('coachSettingsProvince');
+    if (sProv) sProv.value = user.province || '';
+  }
+ 
+  // Load assessments from storage
+  renderCoachAssessments();
+ 
+  // Open first message convo
+  openCoachConvo(0);
+});
+ 
+/* =============================================
+   MY ASSESSMENTS — track submitted ones
+   ============================================= */
+let coachAssessments = JSON.parse(localStorage.getItem('scoutlink_coach_assessments') || '[]');
+ 
+// Override submitAssessment to also save to coach list
+const _origSubmit = window.submitAssessment;
+window.submitAssessment = function() {
+  const text   = document.getElementById('assessmentText').value.trim();
+  const rating = selectedRating;
+  if (!text || rating === 0 || !selectedPlayer) return;
+ 
+  // Save to coach's assessment history
+  coachAssessments.unshift({
+    playerName: selectedPlayer.name,
+    playerPos:  selectedPlayer.position,
+    province:   selectedPlayer.province,
+    text,
+    rating,
+    date: new Date().toLocaleDateString('en-ZW')
+  });
+  localStorage.setItem('scoutlink_coach_assessments', JSON.stringify(coachAssessments));
+ 
+  // Update stat counter
+  const statEl = document.getElementById('coachStatAssessments');
+  if (statEl) statEl.textContent = coachAssessments.length;
+ 
+  // Re-render list
+  renderCoachAssessments();
+ 
+  // Call original behaviour
+  if (_origSubmit) _origSubmit();
+};
+ 
+function renderCoachAssessments() {
+  const list  = document.getElementById('coachAssessmentsList');
+  const empty = document.getElementById('coachAssessmentsEmpty');
+  if (!list) return;
+ 
+  if (coachAssessments.length === 0) {
+    if (empty) empty.classList.remove('hidden');
+    return;
+  }
+  if (empty) empty.classList.add('hidden');
+ 
+  const stars = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+ 
+  list.innerHTML = coachAssessments.map(a => `
+    <div class="assessment-card">
+      <div class="assessment-header">
+        <div class="assessment-coach-avatar">${a.playerName.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+        <div>
+          <strong>${a.playerName}</strong>
+          <span>${a.playerPos} · ${a.province}</span>
+        </div>
+        <span style="color:var(--yellow);font-size:14px;">${stars(a.rating)}</span>
+      </div>
+      <p class="assessment-body">"${a.text}"</p>
+      <p class="assessment-date">${a.date}</p>
+    </div>
+  `).join('');
+}
+ 
+/* =============================================
+   MESSAGES — COACH SIDE
+   ============================================= */
+const coachConversations = [
+  {
+    id: 0, name: 'Tatenda Moyo', sub: 'Striker · Harare · Age 19', initials: 'TM',
+    messages: [
+      { from: 'me',   text: "Hello Tatenda, I've reviewed your videos. Impressive pace and finishing. I'd like to invite you to our trials next Saturday at 9 AM.", time: '10:30 AM' },
+      { from: 'them', text: 'Thank you Coach, I will be there!', time: '10:55 AM' },
+    ]
+  },
+  {
+    id: 1, name: 'Blessing Ncube', sub: 'Midfielder · Bulawayo · Age 21', initials: 'BN',
+    messages: [
+      { from: 'me',   text: 'Blessing, good vision and passing range. Work on your left foot and defensive positioning.', time: 'Yesterday' },
+      { from: 'them', text: 'I appreciate the feedback, will work on it.', time: 'Yesterday' },
+    ]
+  },
+  {
+    id: 2, name: 'Simbarashe Dube', sub: 'Goalkeeper · Harare · Age 17', initials: 'SD',
+    messages: [
+      { from: 'me',   text: 'Simbarashe, excellent reflexes for your age. We have U17 trials coming up — are you available?', time: 'Mon' },
+      { from: 'them', text: 'Looking forward to the trials, Coach!', time: 'Mon' },
+    ]
+  }
+];
+ 
+let activeCoachConvo = 0;
+ 
+function openCoachConvo(id) {
+  activeCoachConvo = id;
+  const convo = coachConversations[id];
+ 
+  document.querySelectorAll('#coachConvoList .convo-item').forEach((el, i) => {
+    el.classList.toggle('active', i === id);
+    const badge = el.querySelector('.convo-unread');
+    if (i === id && badge) badge.remove();
+  });
+ 
+  document.getElementById('coachChatAvatar').textContent = convo.initials;
+  document.getElementById('coachChatName').textContent   = convo.name;
+  document.getElementById('coachChatSub').textContent    = convo.sub;
+ 
+  renderCoachMessages(convo.messages);
+ 
+  const remaining = document.querySelectorAll('#coachConvoList .convo-unread').length;
+  const badge = document.getElementById('coachUnreadCount');
+  if (badge) badge.textContent = remaining > 0 ? `${remaining} Unread` : 'All Read';
+}
+ 
+function renderCoachMessages(msgs) {
+  const container = document.getElementById('coachChatMessages');
+  if (!container) return;
+  container.innerHTML = msgs.map(m => `
+    <div>
+      <div class="msg ${m.from === 'me' ? 'msg-me' : 'msg-them'}">${m.text}</div>
+      <p class="msg-time">${m.time}</p>
+    </div>
+  `).join('');
+  container.scrollTop = container.scrollHeight;
+}
+ 
+function sendCoachMessage() {
+  const input = document.getElementById('coachChatInput');
+  const text  = input.value.trim();
+  if (!text) return;
+ 
+  const now = new Date().toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+  coachConversations[activeCoachConvo].messages.push({ from: 'me', text, time: now });
+  renderCoachMessages(coachConversations[activeCoachConvo].messages);
+  input.value = '';
+ 
+  // Simulate player reply
+  setTimeout(() => {
+    const replies = [
+      'Thank you Coach, I appreciate that!',
+      'Understood, I will keep working hard.',
+      'Thank you for the opportunity!',
+      'I will be available. Thank you Coach!'
+    ];
+    const reply = replies[Math.floor(Math.random() * replies.length)];
+    const replyTime = new Date().toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+    coachConversations[activeCoachConvo].messages.push({ from: 'them', text: reply, time: replyTime });
+    renderCoachMessages(coachConversations[activeCoachConvo].messages);
+  }, 1500);
+}
+ 
+/* =============================================
+   SETTINGS
+   ============================================= */
+function saveCoachSettings() {
+  const stored = JSON.parse(localStorage.getItem('scoutlink_user') || '{}');
+  const name   = document.getElementById('coachSettingsName').value.trim();
+  const email  = document.getElementById('coachSettingsEmail').value.trim();
+  const title  = document.getElementById('coachSettingsTitle').value.trim();
+  const club   = document.getElementById('coachSettingsClub').value.trim();
+  const prov   = document.getElementById('coachSettingsProvince').value;
+ 
+  if (name)  stored.name       = name;
+  if (email) stored.email      = email;
+  if (title) stored.coachTitle = title;
+  if (club)  stored.coachClub  = club;
+  if (prov)  stored.province   = prov;
+ 
+  localStorage.setItem('scoutlink_user', JSON.stringify(stored));
+ 
+  // Update displayed name/meta live
+  if (name) {
+    const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const av = document.getElementById('coachAvatar');
+    if (av) av.textContent = initials;
+    const cn = document.getElementById('coachName');
+    if (cn) cn.textContent = name;
+  }
+  if (title || club) {
+    const cm = document.getElementById('coachMeta');
+    if (cm) cm.textContent = `${title || stored.coachTitle || '—'} · ${club || stored.coachClub || '—'}`;
+  }
+ 
+  showCoachToast('Settings saved!');
+}
+ 
+function confirmDeleteAccount() {
+  if (confirm('Delete your account? This cannot be undone.')) {
+    localStorage.clear();
+    window.location.href = 'index.html';
+  }
+}
+ 
+function showCoachToast(message) {
+  const toast = document.createElement('div');
+  toast.textContent = message;
+  toast.style.cssText = `
+    position:fixed;bottom:24px;right:24px;background:var(--green);
+    color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;
+    font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,166,81,0.3);
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2800);
+}
+ 

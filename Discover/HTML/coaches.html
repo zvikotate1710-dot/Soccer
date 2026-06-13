@@ -23,13 +23,13 @@
       <a href="coaches.html" class="sidebar-link active">
         <span class="sidebar-icon">🔍</span> Browse Players
       </a>
-      <a href="#" class="sidebar-link">
+      <a href="#assessments" class="sidebar-link" onclick="setActive(this)">
         <span class="sidebar-icon">✅</span> My Assessments
       </a>
-      <a href="#" class="sidebar-link">
+      <a href="#messages" class="sidebar-link" onclick="setActive(this)">
         <span class="sidebar-icon">💬</span> Messages
       </a>
-      <a href="#" class="sidebar-link">
+      <a href="#settings" class="sidebar-link" onclick="setActive(this)">
         <span class="sidebar-icon">⚙️</span> Settings
       </a>
     </nav>
@@ -151,6 +151,189 @@
       </div>
     </div>
 
+  </div>
+
+   <!-- COACH DASHBOARD OVERVIEW -->
+    <section class="dash-section" id="coach-dashboard">
+      <h3 class="section-label" style="margin-bottom:20px;">Coach Dashboard</h3>
+      <div class="stats-row" style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;">
+        <div class="stat-card"><span class="stat-card-num" id="coachStatPlayers">8</span><span class="stat-card-label">Players Browsed</span></div>
+        <div class="stat-card"><span class="stat-card-num" id="coachStatAssessments">3</span><span class="stat-card-label">Assessments Given</span></div>
+        <div class="stat-card"><span class="stat-card-num" id="coachStatMessages">2</span><span class="stat-card-label">Active Chats</span></div>
+        <div class="stat-card"><span class="stat-card-num" id="coachStatTrials">1</span><span class="stat-card-label">Trial Invites Sent</span></div>
+      </div>
+ 
+      <!-- Coach Profile Card -->
+      <div class="profile-card">
+        <div class="profile-left">
+          <div class="profile-avatar" id="coachAvatar">CD</div>
+          <div class="profile-info">
+            <h2 id="coachName">Coach Name</h2>
+            <p id="coachMeta">Title · Club</p>
+            <div class="profile-badges">
+              <span class="badge badge-green" id="coachBadgeTitle">—</span>
+              <span class="badge badge-blue" id="coachBadgeProvince">—</span>
+              <span class="badge" style="background:rgba(245,197,24,0.15);color:#F5C518;">✅ Verified Coach</span>
+            </div>
+          </div>
+        </div>
+        <a href="#settings" class="btn btn-outline" onclick="setActive(document.querySelector('[href=\'#settings\']'))">Edit Profile</a>
+      </div>
+    </section>
+ 
+    <!-- MY ASSESSMENTS -->
+    <section class="dash-section" id="assessments">
+      <h3 class="section-label" style="margin-bottom:20px;">My Assessments</h3>
+      <div id="coachAssessmentsList">
+        <div class="empty-state" id="coachAssessmentsEmpty">
+          <p>✅</p>
+          <p>No assessments submitted yet. Browse players and leave your feedback.</p>
+        </div>
+        <!-- Populated by JS when assessments are submitted -->
+      </div>
+    </section>
+ 
+    <!-- MESSAGES -->
+    <section class="dash-section" id="messages">
+      <div class="section-header">
+        <h3 class="section-label">Messages</h3>
+        <span class="badge badge-green" id="coachUnreadCount">2 Unread</span>
+      </div>
+      <div class="messages-layout">
+        <!-- Conversation List -->
+        <div class="convo-list" id="coachConvoList">
+          <div class="convo-item active" onclick="openCoachConvo(0)">
+            <div class="convo-avatar" style="background:var(--green-glow);border-color:var(--green);color:var(--green);">TM</div>
+            <div class="convo-info">
+              <strong>Tatenda Moyo</strong>
+              <span>Striker · Harare · Age 19</span>
+              <p class="convo-preview">Thank you Coach, I will be there!</p>
+            </div>
+            <div class="convo-meta">
+              <span class="convo-time">10:55 AM</span>
+              <span class="convo-unread">1</span>
+            </div>
+          </div>
+          <div class="convo-item" onclick="openCoachConvo(1)">
+            <div class="convo-avatar" style="background:var(--green-glow);border-color:var(--green);color:var(--green);">BN</div>
+            <div class="convo-info">
+              <strong>Blessing Ncube</strong>
+              <span>Midfielder · Bulawayo · Age 21</span>
+              <p class="convo-preview">I appreciate the feedback, will work on it.</p>
+            </div>
+            <div class="convo-meta">
+              <span class="convo-time">Yesterday</span>
+              <span class="convo-unread">1</span>
+            </div>
+          </div>
+          <div class="convo-item" onclick="openCoachConvo(2)">
+            <div class="convo-avatar" style="background:var(--green-glow);border-color:var(--green);color:var(--green);">SD</div>
+            <div class="convo-info">
+              <strong>Simbarashe Dube</strong>
+              <span>Goalkeeper · Harare · Age 17</span>
+              <p class="convo-preview">Looking forward to the trials, Coach!</p>
+            </div>
+            <div class="convo-meta">
+              <span class="convo-time">Mon</span>
+            </div>
+          </div>
+        </div>
+        <!-- Chat Window -->
+        <div class="chat-window" id="coachChatWindow">
+          <div class="chat-header" id="coachChatHeader">
+            <div class="convo-avatar" style="background:var(--green-glow);border-color:var(--green);color:var(--green);" id="coachChatAvatar">TM</div>
+            <div>
+              <strong id="coachChatName">Tatenda Moyo</strong>
+              <span id="coachChatSub">Striker · Harare · Age 19</span>
+            </div>
+          </div>
+          <div class="chat-messages" id="coachChatMessages"></div>
+          <div class="chat-input-row">
+            <input type="text" id="coachChatInput" placeholder="Message this player..." onkeydown="if(event.key==='Enter') sendCoachMessage()"/>
+            <button class="btn btn-primary" onclick="sendCoachMessage()">Send</button>
+          </div>
+        </div>
+      </div>
+    </section>
+ 
+    <!-- SETTINGS -->
+    <section class="dash-section" id="settings">
+      <h3 class="section-label" style="margin-bottom:24px;">Settings</h3>
+      <div class="settings-grid">
+ 
+        <!-- Account -->
+        <div class="settings-card">
+          <h4 class="settings-card-title">🔐 Account</h4>
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="coachSettingsName" placeholder="Your full name"/>
+          </div>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="coachSettingsEmail" placeholder="your@email.com"/>
+          </div>
+          <div class="form-group">
+            <label>New Password</label>
+            <input type="password" id="coachSettingsPassword" placeholder="Leave blank to keep current"/>
+          </div>
+          <button class="btn btn-primary" onclick="saveCoachSettings()">Save Changes</button>
+        </div>
+ 
+        <!-- Coach Profile -->
+        <div class="settings-card">
+          <h4 class="settings-card-title">📋 Coach Profile</h4>
+          <div class="form-group">
+            <label>Coaching Title</label>
+            <input type="text" id="coachSettingsTitle" placeholder="e.g. Head Coach, Academy Director"/>
+          </div>
+          <div class="form-group">
+            <label>Club / Academy</label>
+            <input type="text" id="coachSettingsClub" placeholder="e.g. CAPS United Academy"/>
+          </div>
+          <div class="form-group">
+            <label>Province</label>
+            <select id="coachSettingsProvince">
+              <option value="">Select province</option>
+              <option>Harare</option><option>Bulawayo</option><option>Manicaland</option>
+              <option>Mashonaland Central</option><option>Mashonaland East</option>
+              <option>Mashonaland West</option><option>Masvingo</option>
+              <option>Matabeleland North</option><option>Matabeleland South</option>
+              <option>Midlands</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="saveCoachSettings()">Update Profile</button>
+        </div>
+ 
+        <!-- Notifications -->
+        <div class="settings-card">
+          <h4 class="settings-card-title">🔔 Notifications</h4>
+          <div class="toggle-row">
+            <div><strong>New player registered</strong><p>Alert when a player in your filters signs up</p></div>
+            <label class="toggle-switch"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><strong>Player uploaded a video</strong><p>Get notified of new highlight reels</p></div>
+            <label class="toggle-switch"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><strong>Player replied to message</strong><p>Alert when a player responds to you</p></div>
+            <label class="toggle-switch"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+ 
+        <!-- Danger Zone -->
+        <div class="settings-card settings-danger">
+          <h4 class="settings-card-title">⚠️ Danger Zone</h4>
+          <p style="color:var(--muted);font-size:14px;margin-bottom:16px;">These actions are permanent and cannot be undone.</p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-ghost" onclick="logout()">Log Out</button>
+            <button class="btn" style="background:#FF5A5A20;color:#FF5A5A;border:1px solid #FF5A5A40;" onclick="confirmDeleteAccount()">Delete Account</button>
+          </div>
+        </div>
+ 
+      </div>
+    </section>
+ 
   </div>
 
   <script src="../js/coaches.js"></script>
