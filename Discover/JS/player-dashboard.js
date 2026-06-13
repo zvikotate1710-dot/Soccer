@@ -22,6 +22,15 @@ window.addEventListener('DOMContentLoaded', () => {
   updateStats();
 });
 
+
+// --- Sidebar active link ---
+function setActive(el) {
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  el.classList.add('active');
+  // Close sidebar on mobile after click
+  document.getElementById('sidebar').classList.remove('open');
+}
+
 // --- Load from localStorage ---
 function loadPlayerData() {
   const stored = localStorage.getItem('scoutlink_user');
@@ -215,3 +224,144 @@ function showToast(message) {
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 2800);
 }
+
+
+/* =============================================
+   MESSAGES
+   ============================================= */
+const conversations = [
+  {
+    id: 0,
+    name: 'Coach Dlamini',
+    sub: 'CAPS United Academy · Harare',
+    initials: 'CD',
+    messages: [
+      { from: 'them', text: "Hello! I've been watching your highlight videos and I'm very impressed with your technique.", time: '10:30 AM' },
+      { from: 'them', text: "I'd like to invite you to our trials next weekend at the CAPS United training ground. Are you available?", time: '10:42 AM' },
+    ]
+  },
+  {
+    id: 1,
+    name: 'Coach Ndlovu',
+    sub: 'Highlanders FC · Bulawayo',
+    initials: 'MN',
+    messages: [
+      { from: 'them', text: 'Great footwork on your latest video. Can we chat about your development?', time: 'Yesterday' },
+    ]
+  },
+  {
+    id: 2,
+    name: 'Coach Tawanda',
+    sub: 'Dynamos FC Academy · Harare',
+    initials: 'TM',
+    messages: [
+      { from: 'me', text: 'Hello Coach, I saw you viewed my profile. I would love to hear your thoughts.', time: 'Mon' },
+      { from: 'them', text: 'Thanks for reaching out. We\'ll be in touch soon.', time: 'Mon' },
+    ]
+  }
+];
+ 
+let activeConvo = 0;
+ 
+function openConvo(id) {
+  activeConvo = id;
+  const convo = conversations[id];
+ 
+  // Update active state on convo list
+  document.querySelectorAll('.convo-item').forEach((el, i) => {
+    el.classList.toggle('active', i === id);
+    // Clear unread badge
+    const badge = el.querySelector('.convo-unread');
+    if (i === id && badge) badge.remove();
+  });
+ 
+  // Update chat header
+  document.getElementById('chatName').textContent = convo.name;
+  document.getElementById('chatSub').textContent  = convo.sub;
+  document.querySelector('.chat-header .convo-avatar').textContent = convo.initials;
+ 
+  // Render messages
+  renderMessages(convo.messages);
+ 
+  // Update unread count
+  const remaining = document.querySelectorAll('.convo-unread').length;
+  const badge = document.getElementById('unreadCount');
+  if (badge) badge.textContent = remaining > 0 ? `${remaining} Unread` : 'All Read';
+}
+ 
+function renderMessages(msgs) {
+  const container = document.getElementById('chatMessages');
+  container.innerHTML = msgs.map(m => `
+    <div>
+      <div class="msg ${m.from === 'me' ? 'msg-me' : 'msg-them'}">${m.text}</div>
+      <p class="msg-time">${m.time}</p>
+    </div>
+  `).join('');
+  container.scrollTop = container.scrollHeight;
+}
+ 
+function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text  = input.value.trim();
+  if (!text) return;
+ 
+  const now = new Date().toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+  conversations[activeConvo].messages.push({ from: 'me', text, time: now });
+  renderMessages(conversations[activeConvo].messages);
+  input.value = '';
+ 
+  // Simulate a reply after 1.5s
+  setTimeout(() => {
+    const replies = [
+      "Thanks for your message! I'll get back to you shortly.",
+      "Noted. We'll be in touch soon.",
+      "Great to hear from you. Keep working hard!",
+      "I'll review your latest videos and respond soon."
+    ];
+    const reply = replies[Math.floor(Math.random() * replies.length)];
+    const replyTime = new Date().toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+    conversations[activeConvo].messages.push({ from: 'them', text: reply, time: replyTime });
+    renderMessages(conversations[activeConvo].messages);
+  }, 1500);
+}
+ 
+// Load first convo on page load
+window.addEventListener('load', () => {
+  openConvo(0);
+});
+ 
+/* =============================================
+   SETTINGS
+   ============================================= */
+function saveAccountSettings() {
+  const email    = document.getElementById('settingsEmail').value.trim();
+  const password = document.getElementById('settingsPassword').value;
+ 
+  if (email) {
+    const stored = JSON.parse(localStorage.getItem('scoutlink_user') || '{}');
+    stored.email = email;
+    localStorage.setItem('scoutlink_user', JSON.stringify(stored));
+  }
+ 
+  showToast(password ? 'Email and password updated!' : 'Email updated!');
+  document.getElementById('settingsPassword').value = '';
+}
+ 
+function confirmDeleteAccount() {
+  const confirmed = confirm('Are you sure you want to delete your account? This cannot be undone.');
+  if (confirmed) {
+    localStorage.clear();
+    window.location.href = 'index.html';
+  }
+}
+ 
+// Pre-fill settings email from stored user
+window.addEventListener('DOMContentLoaded', () => {
+  const stored = localStorage.getItem('scoutlink_user');
+  if (stored) {
+    const user = JSON.parse(stored);
+    const emailField = document.getElementById('settingsEmail');
+    if (emailField && user.email) emailField.value = user.email;
+  }
+});
+ 
