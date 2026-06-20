@@ -2,6 +2,16 @@
    SCOUTLINK — REGISTER JS
    ============================================= */
 
+import {
+  auth,
+  db,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  doc,
+  setDoc,
+  serverTimestamp
+} from './firebase-config.js';
+ 
 let selectedRole = null;
 
 // --- Pre-select role from URL param ---
@@ -166,12 +176,13 @@ function checkPasswordStrength(password) {
   label.style.color = level.color;
 }
 
-// --- Final Submission ---
-function submitRegistration() {
+// --- Final Submission — REAL FIREBASE AUTH + FIRESTORE ---
+async function submitRegistration() {
+  const email    = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
-  const confirm = document.getElementById('confirmPassword').value;
-  const terms = document.getElementById('terms').checked;
-
+  const confirm  = document.getElementById('confirmPassword').value;
+  const terms    = document.getElementById('terms').checked;
+ 
   if (!password || password.length < 8) {
     alert('Password must be at least 8 characters.');
     return;
@@ -184,38 +195,85 @@ function submitRegistration() {
     alert('Please agree to the Terms of Use and Privacy Policy.');
     return;
   }
-
-  // Collect all form data
+ 
+  // Build the profile data to store in Firestore
   const userData = {
     role: selectedRole,
     name: document.getElementById('fullName').value.trim(),
-    email: document.getElementById('email').value.trim(),
+    email: email,
     phone: document.getElementById('phone').value.trim(),
     province: document.getElementById('province').value,
-    registeredAt: new Date().toISOString(),
+    registeredAt: serverTimestamp(),
   };
-
+ 
   if (selectedRole === 'player') {
-    userData.age = document.getElementById('age').value;
-    userData.position = document.getElementById('position').value;
+    userData.age         = document.getElementById('age').value;
+    userData.position    = document.getElementById('position').value;
     userData.currentTeam = document.getElementById('currentTeam').value.trim();
   } else {
     userData.coachTitle = document.getElementById('coachTitle').value.trim();
-    userData.coachClub = document.getElementById('coachClub').value.trim();
-    userData.license = document.getElementById('license').value;
+    userData.coachClub  = document.getElementById('coachClub').value.trim();
+    userData.license    = document.getElementById('license').value;
   }
-
-  // Save to localStorage (replace with Firebase later)
-  localStorage.setItem('scoutlink_user', JSON.stringify(userData));
-  localStorage.setItem('scoutlink_loggedIn', 'true');
-
-  // Show success
-  const msg = document.getElementById('successMessage');
-  if (msg) {
-    msg.textContent = selectedRole === 'player'
-      ? 'Your player profile has been created. Start uploading your highlights!'
-      : 'Your coach profile is ready. Start browsing players across Zimbabwe!';
+ 
+  // Disable the button + show loading state while Firebase processes
+  const createBtn = document.querySelector('#stepPassword .btn-primary');
+  const originalText = createBtn ? createBtn.textContent : '';
+  if (createBtn) { createBtn.disabled = true; createBtn.textContent = 'Creating account...'; }
+ 
+  try {
+    // 1. Create the actual Firebase Auth user (real email + password account)
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = credential.user;
+ 
+    // 2. Set their display name on the Auth profile
+    await updateProfile(user, { displayName: userData.name });
+ 
+    // 3. Save the full profile to Firestore, keyed by their Auth UID
+    await setDoc(doc(db, 'users', user.uid), userData);
+ 
+    // 4. Keep a lightweight local cache so dashboards load instantly
+    //    (Firestore remains the source of truth; this is just for snappy UI)
+    localStorage.setItem('scoutlink_user', JSON.stringify({ ...userData, uid: user.uid, registeredAt: new Date().toISOString() }));
+    localStorage.setItem('scoutlink_loggedIn', 'true');
+ 
+    // Show success screen
+    const msg = document.getElementById('successMessage');
+    if (msg) {
+      msg.textContent = selectedRole === 'player'
+        ? 'Your player profile has been created. Start uploading your highlights!'
+        : 'Your coach profile is ready. Start browsing players across Zimbabwe!';
+    }
+ 
+    goToStep(4);
+ 
+    const dashBtn = document.getElementById('successDashBtn');
+    if (dashBtn) {
+      dashBtn.href = selectedRole === 'coach' ? 'coaches.html' : 'player-dashboard.html';
+    }
+ 
+  } catch (error) {
+    console.error('Firebase registration error:', error);
+ 
+    // Translate common Firebase error codes into friendly messages
+    let message = 'Something went wrong creating your account. Please try again.';
+    if (error.code === 'auth/email-already-in-use') {
+      message = 'An account already exists with this email. Try logging in instead.';
+    } else if (error.code === 'auth/invalid-email') {
+      message = 'That email address looks invalid. Please double-check it.';
+    } else if (error.code === 'auth/weak-password') {
+      message = 'Your password is too weak. Use at least 8 characters.';
+    } else if (error.code === 'auth/network-request-failed') {
+      message = 'Network error. Please check your internet connection and try again.';
+    }
+    alert(message);
+ 
+  } finally {
+    if (createBtn) { createBtn.disabled = false; createBtn.textContent = originalText; }
   }
-
-  goToStep(4);
 }
+ 
+// --- Expose functions called via inline onclick="..." in the HTML ---
+window.selectRole         = selectRole;
+window.goToStep           = goToStep;
+window.submitRegistration = submitRegistration;
