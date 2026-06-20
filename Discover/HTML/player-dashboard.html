@@ -152,25 +152,55 @@
 
       <!-- Upload Form -->
       <div class="upload-form hidden" id="uploadForm">
+        
+         <!-- Toggle: File or Link -->
+        <div class="upload-toggle">
+          <button class="upload-tab active" id="tabFile" onclick="switchUploadTab('file')">📁 Upload from Device</button>
+          <button class="upload-tab" id="tabLink" onclick="switchUploadTab('link')">🔗 Paste a Link</button>
+        </div>
+ 
         <div class="edit-grid">
           <div class="form-group full-width">
             <label>Video Title</label>
-            <input type="text" id="videoTitle" placeholder="e.g. Match Highlights vs Dynamos U20" />
+            <input type="text" id="videoTitle" placeholder="e.g. Match Highlights vs Dynamos U20"/>
           </div>
-          <div class="form-group full-width">
-            <label>Add Video</label>
-            <input type="file" id="videoFile" accept="video/*" />
+ 
+          <!-- FILE UPLOAD OPTION -->
+          <div class="form-group full-width" id="fileUploadGroup">
+            <label>Select Video File</label>
+            <div class="file-drop-zone" id="fileDropZone" onclick="document.getElementById('videoFile').click()">
+              <div class="file-drop-icon">🎬</div>
+              <p class="file-drop-text">Click to browse or drag & drop your video here</p>
+              <p class="file-drop-sub">MP4, MOV, AVI — max 500MB</p>
+              <input type="file" id="videoFile" accept="video/*" style="display:none" onchange="handleFileSelect(event)"/>
+            </div>
+            <div class="file-selected hidden" id="fileSelected">
+              <span class="file-icon">✅</span>
+              <span id="fileSelectedName">video.mp4</span>
+              <button class="btn-remove-file" onclick="clearFile()">✕</button>
+            </div>
           </div>
-          <div class="form-group full-width">
+ 
+          <!-- LINK OPTION -->
+          <div class="form-group full-width hidden" id="linkUploadGroup">
             <label>YouTube or Vimeo Link</label>
-            <input type="url" id="videoUrl" placeholder="https://youtube.com/watch?v=..." />
+            <input type="url" id="videoUrl" placeholder="https://youtube.com/watch?v=..."/>
           </div>
+ 
           <div class="form-group full-width">
             <label>Description (optional)</label>
-            <textarea id="videoDesc" rows="2"
-              placeholder="What does this video show? Goals, dribbles, defending..."></textarea>
+            <textarea id="videoDesc" rows="2" placeholder="What does this video show? Goals, dribbles, defending..."></textarea>
           </div>
         </div>
+ 
+        <!-- Upload Progress (shown during file upload) -->
+        <div class="upload-progress hidden" id="uploadProgress">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progressFill"></div>
+          </div>
+          <p class="progress-label" id="progressLabel">Uploading... 0%</p>
+        </div>
+ 
         <div class="btn-row">
           <button class="btn btn-ghost" onclick="toggleUploadForm()">Cancel</button>
           <button class="btn btn-primary" onclick="addVideo()">Upload Video</button>

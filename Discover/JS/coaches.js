@@ -2,6 +2,36 @@
    SCOUTLINK — COACHES BROWSE JS
    ============================================= */
 
+import {
+  auth, db, onAuthStateChanged, signOut,
+  doc, getDoc, updateDoc, deleteDoc,
+  updateEmail, deleteUser,
+  EmailAuthProvider, reauthenticateWithCredential
+} from './firebase-config.js';
+
+// --- Auth Guard: REAL Firebase session check ---
+onAuthStateChanged(auth, async (firebaseUser) => {
+  if (!firebaseUser) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  // Pull the authoritative coach profile from Firestore
+  try {
+    const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
+    if (snap.exists()) {
+      const profile = snap.data();
+      localStorage.setItem('scoutlink_user', JSON.stringify({ ...profile, uid: firebaseUser.uid }));
+    }
+  } catch (err) {
+    console.error('Failed to load coach profile from Firestore:', err);
+  }
+
+  // Now render the dashboard with a confirmed, fresh profile
+  initCoachDashboard();
+});
+
+
 // Mock player database (Zimbabwe-specific)
 const mockPlayers = [
   { id: 1, name: 'Tatenda Moyo', position: 'Striker', province: 'Harare', age: 19, club: 'Dynamos FC Youth', bio: 'Fast, direct striker with a clinical finish. Scored 14 goals in the 2024 regional league. Strong in the air and good on both feet.', videos: [{ title: 'Goal Compilation 2024', url: 'https://youtube.com' }, { title: 'Full Match vs Caps Utd', url: 'https://youtube.com' }], views: 23, assessments: 2 },
@@ -18,8 +48,9 @@ let filteredPlayers = [...mockPlayers];
 let selectedPlayer = null;
 let selectedRating = 0;
 
-window.addEventListener('DOMContentLoaded', () => {
+function initCoachDashboard() {
   // Add current user's profile to player list if they're a player
+  // (kept from original demo — lets a player account preview their own card)
   const stored = localStorage.getItem('scoutlink_user');
   if (stored) {
     const user = JSON.parse(stored);
@@ -43,7 +74,12 @@ window.addEventListener('DOMContentLoaded', () => {
   filteredPlayers = [...mockPlayers];
   renderPlayers();
   initStarRating();
-});
+
+  // Load coach-specific dashboard data (profile card, settings, assessments, messages)
+  loadCoachProfile();
+  renderCoachAssessments();
+  openCoachConvo(0);
+}
 
 // --- Render Players ---
 function renderPlayers() {
@@ -220,8 +256,15 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
-function logout() {
+// --- Logout — REAL FIREBASE SIGN OUT ---
+async function logout() {
+  try {
+    await signOut(auth);
+  } catch (err) {
+    console.error('Sign out error:', err);
+  }
   localStorage.removeItem('scoutlink_loggedIn');
+  localStorage.removeItem('scoutlink_user');
   window.location.href = 'login.html';
 }
 
@@ -238,20 +281,20 @@ function setActive(el) {
   el.classList.add('active');
   document.getElementById('sidebar').classList.remove('open');
 }
- 
+
 /* =============================================
    COACH DASHBOARD — load profile info
    ============================================= */
-window.addEventListener('DOMContentLoaded', () => {
+function loadCoachProfile() {
   const stored = localStorage.getItem('scoutlink_user');
   if (stored) {
     const user = JSON.parse(stored);
- 
+
     // Top bar avatar & greeting
     const initials = (user.name || 'CD').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
     const avatar = document.querySelector('.topbar-avatar');
     if (avatar) avatar.textContent = initials;
- 
+
     // Dashboard profile card
     const coachAvatar = document.getElementById('coachAvatar');
     if (coachAvatar) coachAvatar.textContent = initials;
@@ -263,7 +306,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (badgeTitle) badgeTitle.textContent = user.coachTitle || 'Coach';
     const badgeProv = document.getElementById('coachBadgeProvince');
     if (badgeProv) badgeProv.textContent = user.province || '—';
- 
+
     // Pre-fill settings
     const sName = document.getElementById('coachSettingsName');
     if (sName) sName.value = user.name || '';
@@ -276,26 +319,20 @@ window.addEventListener('DOMContentLoaded', () => {
     const sProv = document.getElementById('coachSettingsProvince');
     if (sProv) sProv.value = user.province || '';
   }
- 
-  // Load assessments from storage
-  renderCoachAssessments();
- 
-  // Open first message convo
-  openCoachConvo(0);
-});
- 
+}
+
 /* =============================================
    MY ASSESSMENTS — track submitted ones
    ============================================= */
 let coachAssessments = JSON.parse(localStorage.getItem('scoutlink_coach_assessments') || '[]');
- 
+
 // Override submitAssessment to also save to coach list
 const _origSubmit = window.submitAssessment;
 window.submitAssessment = function() {
   const text   = document.getElementById('assessmentText').value.trim();
   const rating = selectedRating;
   if (!text || rating === 0 || !selectedPlayer) return;
- 
+
   // Save to coach's assessment history
   coachAssessments.unshift({
     playerName: selectedPlayer.name,
@@ -306,31 +343,31 @@ window.submitAssessment = function() {
     date: new Date().toLocaleDateString('en-ZW')
   });
   localStorage.setItem('scoutlink_coach_assessments', JSON.stringify(coachAssessments));
- 
+
   // Update stat counter
   const statEl = document.getElementById('coachStatAssessments');
   if (statEl) statEl.textContent = coachAssessments.length;
- 
+
   // Re-render list
   renderCoachAssessments();
- 
+
   // Call original behaviour
   if (_origSubmit) _origSubmit();
 };
- 
+
 function renderCoachAssessments() {
   const list  = document.getElementById('coachAssessmentsList');
   const empty = document.getElementById('coachAssessmentsEmpty');
   if (!list) return;
- 
+
   if (coachAssessments.length === 0) {
     if (empty) empty.classList.remove('hidden');
     return;
   }
   if (empty) empty.classList.add('hidden');
- 
+
   const stars = n => '★'.repeat(n) + '☆'.repeat(5 - n);
- 
+
   list.innerHTML = coachAssessments.map(a => `
     <div class="assessment-card">
       <div class="assessment-header">
@@ -346,7 +383,7 @@ function renderCoachAssessments() {
     </div>
   `).join('');
 }
- 
+
 /* =============================================
    MESSAGES — COACH SIDE
    ============================================= */
@@ -373,30 +410,30 @@ const coachConversations = [
     ]
   }
 ];
- 
+
 let activeCoachConvo = 0;
- 
+
 function openCoachConvo(id) {
   activeCoachConvo = id;
   const convo = coachConversations[id];
- 
+
   document.querySelectorAll('#coachConvoList .convo-item').forEach((el, i) => {
     el.classList.toggle('active', i === id);
     const badge = el.querySelector('.convo-unread');
     if (i === id && badge) badge.remove();
   });
- 
+
   document.getElementById('coachChatAvatar').textContent = convo.initials;
   document.getElementById('coachChatName').textContent   = convo.name;
   document.getElementById('coachChatSub').textContent    = convo.sub;
- 
+
   renderCoachMessages(convo.messages);
- 
+
   const remaining = document.querySelectorAll('#coachConvoList .convo-unread').length;
   const badge = document.getElementById('coachUnreadCount');
   if (badge) badge.textContent = remaining > 0 ? `${remaining} Unread` : 'All Read';
 }
- 
+
 function renderCoachMessages(msgs) {
   const container = document.getElementById('coachChatMessages');
   if (!container) return;
@@ -408,17 +445,17 @@ function renderCoachMessages(msgs) {
   `).join('');
   container.scrollTop = container.scrollHeight;
 }
- 
+
 function sendCoachMessage() {
   const input = document.getElementById('coachChatInput');
   const text  = input.value.trim();
   if (!text) return;
- 
+
   const now = new Date().toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
   coachConversations[activeCoachConvo].messages.push({ from: 'me', text, time: now });
   renderCoachMessages(coachConversations[activeCoachConvo].messages);
   input.value = '';
- 
+
   // Simulate player reply
   setTimeout(() => {
     const replies = [
@@ -433,49 +470,113 @@ function sendCoachMessage() {
     renderCoachMessages(coachConversations[activeCoachConvo].messages);
   }, 1500);
 }
- 
+
 /* =============================================
    SETTINGS
    ============================================= */
-function saveCoachSettings() {
+async function saveCoachSettings() {
+  const firebaseUser = auth.currentUser;
+  if (!firebaseUser) {
+    showCoachToast('You must be logged in to change settings.');
+    return;
+  }
+
   const stored = JSON.parse(localStorage.getItem('scoutlink_user') || '{}');
   const name   = document.getElementById('coachSettingsName').value.trim();
   const email  = document.getElementById('coachSettingsEmail').value.trim();
   const title  = document.getElementById('coachSettingsTitle').value.trim();
   const club   = document.getElementById('coachSettingsClub').value.trim();
   const prov   = document.getElementById('coachSettingsProvince').value;
- 
-  if (name)  stored.name       = name;
-  if (email) stored.email      = email;
-  if (title) stored.coachTitle = title;
-  if (club)  stored.coachClub  = club;
-  if (prov)  stored.province   = prov;
- 
-  localStorage.setItem('scoutlink_user', JSON.stringify(stored));
- 
-  // Update displayed name/meta live
-  if (name) {
-    const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    const av = document.getElementById('coachAvatar');
-    if (av) av.textContent = initials;
-    const cn = document.getElementById('coachName');
-    if (cn) cn.textContent = name;
+
+  const updates = {};
+  if (name)  updates.name       = name;
+  if (title) updates.coachTitle = title;
+  if (club)  updates.coachClub  = club;
+  if (prov)  updates.province   = prov;
+
+  try {
+    // Email change requires Firebase Auth re-authentication
+    if (email && email !== firebaseUser.email) {
+      const currentPassword = prompt('For security, please re-enter your current password to confirm this email change:');
+      if (!currentPassword) { showCoachToast('Change cancelled.'); return; }
+
+      const credential = EmailAuthProvider.credential(firebaseUser.email, currentPassword);
+      await reauthenticateWithCredential(firebaseUser, credential);
+      await updateEmail(firebaseUser, email);
+      updates.email = email;
+    }
+
+    // Write profile fields to Firestore (source of truth)
+    if (Object.keys(updates).length > 0) {
+      await updateDoc(doc(db, 'users', firebaseUser.uid), updates);
+    }
+
+    // Update local cache + UI
+    Object.assign(stored, updates);
+    localStorage.setItem('scoutlink_user', JSON.stringify(stored));
+
+    if (name) {
+      const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+      const av = document.getElementById('coachAvatar');
+      if (av) av.textContent = initials;
+      const cn = document.getElementById('coachName');
+      if (cn) cn.textContent = name;
+    }
+    if (title || club) {
+      const cm = document.getElementById('coachMeta');
+      if (cm) cm.textContent = `${title || stored.coachTitle || '—'} · ${club || stored.coachClub || '—'}`;
+    }
+
+    showCoachToast('Settings saved!');
+
+  } catch (err) {
+    console.error('Coach settings update error:', err);
+    let msg = 'Failed to update settings. Please try again.';
+    if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+      msg = 'Incorrect current password. Please try again.';
+    } else if (err.code === 'auth/email-already-in-use') {
+      msg = 'That email is already used by another account.';
+    } else if (err.code === 'auth/requires-recent-login') {
+      msg = 'Please log out and log back in, then try again.';
+    }
+    showCoachToast(msg);
   }
-  if (title || club) {
-    const cm = document.getElementById('coachMeta');
-    if (cm) cm.textContent = `${title || stored.coachTitle || '—'} · ${club || stored.coachClub || '—'}`;
-  }
- 
-  showCoachToast('Settings saved!');
 }
- 
-function confirmDeleteAccount() {
-  if (confirm('Delete your account? This cannot be undone.')) {
+
+async function confirmDeleteAccount() {
+  const confirmed = confirm('Delete your account? This cannot be undone.');
+  if (!confirmed) return;
+
+  const firebaseUser = auth.currentUser;
+  if (!firebaseUser) {
     localStorage.clear();
     window.location.href = 'index.html';
+    return;
+  }
+
+  const currentPassword = prompt('For security, please re-enter your password to confirm account deletion:');
+  if (!currentPassword) return;
+
+  try {
+    const credential = EmailAuthProvider.credential(firebaseUser.email, currentPassword);
+    await reauthenticateWithCredential(firebaseUser, credential);
+
+    await deleteDoc(doc(db, 'users', firebaseUser.uid));
+    await deleteUser(firebaseUser);
+
+    localStorage.clear();
+    window.location.href = 'index.html';
+
+  } catch (err) {
+    console.error('Account deletion error:', err);
+    if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+      alert('Incorrect password. Account was not deleted.');
+    } else {
+      alert('Something went wrong deleting your account. Please try again.');
+    }
   }
 }
- 
+
 function showCoachToast(message) {
   const toast = document.createElement('div');
   toast.textContent = message;
@@ -487,4 +588,18 @@ function showCoachToast(message) {
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 2800);
 }
+
+// --- Expose functions called via inline onclick/onchange/oninput in the HTML ---
+// (Required because module scripts don't leak functions to the global scope automatically)
+window.clearFilters         = clearFilters;
+window.closeModal            = closeModal;
+window.confirmDeleteAccount = confirmDeleteAccount;
+window.logout                = logout;
+window.openCoachConvo        = openCoachConvo;
+window.saveCoachSettings    = saveCoachSettings;
+window.sendCoachMessage      = sendCoachMessage;
+window.setActive             = setActive;
+window.toggleSidebar         = toggleSidebar;
+window.applyFilters          = applyFilters;
+window.openPlayerModal       = openPlayerModal;
  
