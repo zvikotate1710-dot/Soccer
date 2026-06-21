@@ -74,6 +74,9 @@ function requireFirebase() {
       renderProfile();
       renderVideos();
       updateStats();
+
+      // Start listening for real, live conversations (Phase 5 — Realtime Database)
+      initMessaging(firebaseUser.uid);
     });
 
   } catch (err) {
@@ -588,108 +591,216 @@ function showToast(message) {
 }
 
 /* =============================================
-   MESSAGES
+   MESSAGES — REAL, LIVE, CROSS-DEVICE
+   (Firebase Realtime Database — Phase 5)
    ============================================= */
-const conversations = [
-  {
-    id: 0,
-    name: 'Coach Dlamini',
-    sub: 'CAPS United Academy · Harare',
-    initials: 'CD',
-    messages: [
-      { from: 'them', text: "Hello! I've been watching your highlight videos and I'm very impressed with your technique.", time: '10:30 AM' },
-      { from: 'them', text: "I'd like to invite you to our trials next weekend at the CAPS United training ground. Are you available?", time: '10:42 AM' },
-    ]
-  },
-  {
-    id: 1,
-    name: 'Coach Ndlovu',
-    sub: 'Highlanders FC · Bulawayo',
-    initials: 'MN',
-    messages: [
-      { from: 'them', text: 'Great footwork on your latest video. Can we chat about your development?', time: 'Yesterday' },
-    ]
-  },
-  {
-    id: 2,
-    name: 'Coach Tawanda',
-    sub: 'Dynamos FC Academy · Harare',
-    initials: 'TM',
-    messages: [
-      { from: 'me', text: 'Hello Coach, I saw you viewed my profile. I would love to hear your thoughts.', time: 'Mon' },
-      { from: 'them', text: 'Thanks for reaching out. We\'ll be in touch soon.', time: 'Mon' },
-    ]
-  }
-];
 
-let activeConvo = 0;
+let myUid = null;
+let conversationsCache = {};   // { convoId: { otherUserName, otherUserRole, lastMessageTime, unread } }
+let activeConvoId = null;
+let activeConvoListener = null; // unsubscribe function for the currently open thread
+let convoListListener = null;   // unsubscribe function for the inbox list
 
-function openConvo(id) {
-  activeConvo = id;
-  const convo = conversations[id];
+// --- Initialise messaging once login is confirmed ---
+function initMessaging(uid) {
+  myUid = uid;
 
-  // Update active state on convo list
-  document.querySelectorAll('.convo-item').forEach((el, i) => {
-    el.classList.toggle('active', i === id);
-    // Clear unread badge
-    const badge = el.querySelector('.convo-unread');
-    if (i === id && badge) badge.remove();
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  const { rtdb, dbRef, onValue } = fb;
+
+  // Listen LIVE to this user's conversation index. Any new conversation,
+  // or any update to an existing one (new message, unread flag), re-renders
+  // the inbox automatically — no refresh needed, no polling.
+  const listRef = dbRef(rtdb, `userConversations/${uid}`);
+
+  if (convoListListener) convoListListener();
+  convoListListener = onValue(listRef, (snapshot) => {
+    conversationsCache = snapshot.val() || {};
+    renderConvoList();
+  }, (err) => {
+    console.error('Failed to listen to conversation list:', err);
   });
+}
+
+// --- Render the conversation list in the sidebar of the Messages panel ---
+function renderConvoList() {
+  const list = document.getElementById('convoList');
+  if (!list) return;
+
+  const entries = Object.entries(conversationsCache)
+    .sort((a, b) => (b[1].lastMessageTime || 0) - (a[1].lastMessageTime || 0));
+
+  if (entries.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <p>💬</p>
+        <p>No conversations yet. When a coach messages you, it will appear here.</p>
+      </div>
+    `;
+    document.getElementById('chatWindow').classList.add('hidden');
+    const badge = document.getElementById('unreadCount');
+    if (badge) badge.textContent = 'No messages';
+    return;
+  }
+
+  document.getElementById('chatWindow').classList.remove('hidden');
+
+  list.innerHTML = entries.map(([convoId, convo]) => {
+    const initials = (convo.otherUserName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const isActive = convoId === activeConvoId;
+    const preview = convo.lastMessageText || 'Start the conversation';
+    const timeLabel = convo.lastMessageTime ? formatConvoTime(convo.lastMessageTime) : '';
+    return `
+      <div class="convo-item ${isActive ? 'active' : ''}" onclick="openConvo('${convoId}')">
+        <div class="convo-avatar">${initials}</div>
+        <div class="convo-info">
+          <strong>${convo.otherUserName || 'Unknown'}</strong>
+          <span>${convo.otherUserSub || ''}</span>
+          <p class="convo-preview">${preview}</p>
+        </div>
+        <div class="convo-meta">
+          <span class="convo-time">${timeLabel}</span>
+          ${convo.unread ? '<span class="convo-unread">●</span>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Update the unread badge in the section header
+  const unreadCount = entries.filter(([, c]) => c.unread).length;
+  const badge = document.getElementById('unreadCount');
+  if (badge) badge.textContent = unreadCount > 0 ? `${unreadCount} Unread` : 'All Read';
+
+  // If nothing is open yet, open the most recent conversation automatically
+  if (!activeConvoId && entries.length > 0) {
+    openConvo(entries[0][0]);
+  }
+}
+
+function formatConvoTime(timestamp) {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) return date.toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleDateString('en-ZW', { day: 'numeric', month: 'short' });
+}
+
+// --- Open a conversation thread and listen for new messages LIVE ---
+function openConvo(convoId) {
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  const { rtdb, dbRef, onValue, update } = fb;
+
+  activeConvoId = convoId;
+  renderConvoList(); // refresh active-state highlighting
+
+  const convo = conversationsCache[convoId];
+  if (!convo) return;
 
   // Update chat header
-  document.getElementById('chatName').textContent = convo.name;
-  document.getElementById('chatSub').textContent  = convo.sub;
-  document.querySelector('.chat-header .convo-avatar').textContent = convo.initials;
+  document.getElementById('chatName').textContent = convo.otherUserName || 'Unknown';
+  document.getElementById('chatSub').textContent  = convo.otherUserSub || '';
+  const initials = (convo.otherUserName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  document.querySelector('.chat-header .convo-avatar').textContent = initials;
 
-  // Render messages
-  renderMessages(convo.messages);
+  // Mark as read in this user's own index (does not affect the other person's copy)
+  if (convo.unread) {
+    update(dbRef(rtdb, `userConversations/${myUid}/${convoId}`), { unread: false }).catch(err => {
+      console.error('Failed to mark conversation as read:', err);
+    });
+  }
 
-  // Update unread count
-  const remaining = document.querySelectorAll('.convo-unread').length;
-  const badge = document.getElementById('unreadCount');
-  if (badge) badge.textContent = remaining > 0 ? `${remaining} Unread` : 'All Read';
+  // Stop listening to the previously open thread before opening a new one
+  if (activeConvoListener) activeConvoListener();
+
+  const messagesRef = dbRef(rtdb, `conversations/${convoId}/messages`);
+  activeConvoListener = onValue(messagesRef, (snapshot) => {
+    const messages = snapshot.val() || {};
+    const sorted = Object.values(messages).sort((a, b) => a.timestamp - b.timestamp);
+    renderMessages(sorted);
+  }, (err) => {
+    console.error('Failed to listen to messages:', err);
+  });
 }
 
 function renderMessages(msgs) {
   const container = document.getElementById('chatMessages');
-  container.innerHTML = msgs.map(m => `
-    <div>
-      <div class="msg ${m.from === 'me' ? 'msg-me' : 'msg-them'}">${m.text}</div>
-      <p class="msg-time">${m.time}</p>
-    </div>
-  `).join('');
+  if (!container) return;
+
+  if (msgs.length === 0) {
+    container.innerHTML = `<p style="color:var(--muted);font-size:13px;text-align:center;padding:24px;">No messages yet. Say hello!</p>`;
+    return;
+  }
+
+  container.innerHTML = msgs.map(m => {
+    const mine = m.senderId === myUid;
+    const time = new Date(m.timestamp).toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+    return `
+      <div>
+        <div class="msg ${mine ? 'msg-me' : 'msg-them'}">${escapeHtml(m.text)}</div>
+        <p class="msg-time">${time}</p>
+      </div>
+    `;
+  }).join('');
   container.scrollTop = container.scrollHeight;
 }
 
-function sendMessage() {
+// --- Send a message in the currently open conversation ---
+async function sendMessage() {
   const input = document.getElementById('chatInput');
   const text  = input.value.trim();
-  if (!text) return;
+  if (!text || !activeConvoId) return;
 
-  const now = new Date().toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
-  conversations[activeConvo].messages.push({ from: 'me', text, time: now });
-  renderMessages(conversations[activeConvo].messages);
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  const { rtdb, dbRef, push, set, update, rtdbServerTimestamp } = fb;
+  const convo = conversationsCache[activeConvoId];
+  if (!convo) return;
+
   input.value = '';
+  const timestamp = Date.now();
 
-  // Simulate a reply after 1.5s
-  setTimeout(() => {
-    const replies = [
-      "Thanks for your message! I'll get back to you shortly.",
-      "Noted. We'll be in touch soon.",
-      "Great to hear from you. Keep working hard!",
-      "I'll review your latest videos and respond soon."
-    ];
-    const reply = replies[Math.floor(Math.random() * replies.length)];
-    const replyTime = new Date().toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
-    conversations[activeConvo].messages.push({ from: 'them', text: reply, time: replyTime });
-    renderMessages(conversations[activeConvo].messages);
-  }, 1500);
+  try {
+    // 1. Add the message to the shared thread
+    const messagesRef = dbRef(rtdb, `conversations/${activeConvoId}/messages`);
+    const newMsgRef = push(messagesRef);
+    await set(newMsgRef, {
+      senderId: myUid,
+      text,
+      timestamp,
+    });
+
+    // 2. Update MY copy of the conversation index (no unread flag for myself)
+    await update(dbRef(rtdb, `userConversations/${myUid}/${activeConvoId}`), {
+      lastMessageText: text,
+      lastMessageTime: timestamp,
+      unread: false,
+    });
+
+    // 3. Update the OTHER person's copy of the conversation index, flagged unread
+    await update(dbRef(rtdb, `userConversations/${convo.otherUserId}/${activeConvoId}`), {
+      lastMessageText: text,
+      lastMessageTime: timestamp,
+      unread: true,
+    });
+
+  } catch (err) {
+    console.error('Failed to send message:', err);
+    showToast('Failed to send message. Please try again.');
+    input.value = text; // restore so they don't lose what they typed
+  }
 }
 
-// Load first convo on page load
-window.addEventListener('load', () => {
-  openConvo(0);
-});
+// --- Basic HTML escaping so message text can't inject markup ---
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
 
 /* =============================================
    SETTINGS

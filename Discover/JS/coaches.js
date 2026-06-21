@@ -46,6 +46,9 @@ function requireFirebase() {
 
       // Now render the dashboard with a confirmed, fresh profile
       initCoachDashboard();
+
+      // Start listening for real, live conversations (Phase 5 — Realtime Database)
+      initMessaging(firebaseUser.uid);
     });
 
   } catch (err) {
@@ -99,10 +102,11 @@ function initCoachDashboard() {
   renderPlayers();
   initStarRating();
 
-  // Load coach-specific dashboard data (profile card, settings, assessments, messages)
+  // Load coach-specific dashboard data (profile card, settings, assessments)
   loadCoachProfile();
   renderCoachAssessments();
-  openCoachConvo(0);
+  // NOTE: messaging is initialised separately via initMessaging(uid), called
+  // from the auth-confirmed callback once we have a real Firebase UID.
 }
 
 // --- Render Players ---
@@ -411,90 +415,284 @@ function renderCoachAssessments() {
 }
 
 /* =============================================
-   MESSAGES — COACH SIDE
+   MESSAGES — COACH SIDE — REAL, LIVE, CROSS-DEVICE
+   (Firebase Realtime Database — Phase 5)
    ============================================= */
-const coachConversations = [
-  {
-    id: 0, name: 'Tatenda Moyo', sub: 'Striker · Harare · Age 19', initials: 'TM',
-    messages: [
-      { from: 'me',   text: "Hello Tatenda, I've reviewed your videos. Impressive pace and finishing. I'd like to invite you to our trials next Saturday at 9 AM.", time: '10:30 AM' },
-      { from: 'them', text: 'Thank you Coach, I will be there!', time: '10:55 AM' },
-    ]
-  },
-  {
-    id: 1, name: 'Blessing Ncube', sub: 'Midfielder · Bulawayo · Age 21', initials: 'BN',
-    messages: [
-      { from: 'me',   text: 'Blessing, good vision and passing range. Work on your left foot and defensive positioning.', time: 'Yesterday' },
-      { from: 'them', text: 'I appreciate the feedback, will work on it.', time: 'Yesterday' },
-    ]
-  },
-  {
-    id: 2, name: 'Simbarashe Dube', sub: 'Goalkeeper · Harare · Age 17', initials: 'SD',
-    messages: [
-      { from: 'me',   text: 'Simbarashe, excellent reflexes for your age. We have U17 trials coming up — are you available?', time: 'Mon' },
-      { from: 'them', text: 'Looking forward to the trials, Coach!', time: 'Mon' },
-    ]
-  }
-];
 
-let activeCoachConvo = 0;
+let myUid = null;
+let conversationsCache = {};
+let activeConvoId = null;
+let activeConvoListener = null;
+let convoListListener = null;
 
-function openCoachConvo(id) {
-  activeCoachConvo = id;
-  const convo = coachConversations[id];
+// --- Initialise messaging once login is confirmed ---
+function initMessaging(uid) {
+  myUid = uid;
 
-  document.querySelectorAll('#coachConvoList .convo-item').forEach((el, i) => {
-    el.classList.toggle('active', i === id);
-    const badge = el.querySelector('.convo-unread');
-    if (i === id && badge) badge.remove();
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  const { rtdb, dbRef, onValue } = fb;
+
+  const listRef = dbRef(rtdb, `userConversations/${uid}`);
+
+  if (convoListListener) convoListListener();
+  convoListListener = onValue(listRef, (snapshot) => {
+    conversationsCache = snapshot.val() || {};
+    renderCoachConvoList();
+  }, (err) => {
+    console.error('Failed to listen to conversation list:', err);
   });
+}
 
-  document.getElementById('coachChatAvatar').textContent = convo.initials;
-  document.getElementById('coachChatName').textContent   = convo.name;
-  document.getElementById('coachChatSub').textContent    = convo.sub;
+// --- Render the conversation list in the sidebar of the Messages panel ---
+function renderCoachConvoList() {
+  const list = document.getElementById('coachConvoList');
+  if (!list) return;
 
-  renderCoachMessages(convo.messages);
+  const entries = Object.entries(conversationsCache)
+    .sort((a, b) => (b[1].lastMessageTime || 0) - (a[1].lastMessageTime || 0));
 
-  const remaining = document.querySelectorAll('#coachConvoList .convo-unread').length;
+  if (entries.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <p>💬</p>
+        <p>No conversations yet. Message a player from their profile to start one.</p>
+      </div>
+    `;
+    document.getElementById('coachChatWindow').classList.add('hidden');
+    const badge = document.getElementById('coachUnreadCount');
+    if (badge) badge.textContent = 'No messages';
+    return;
+  }
+
+  document.getElementById('coachChatWindow').classList.remove('hidden');
+
+  list.innerHTML = entries.map(([convoId, convo]) => {
+    const initials = (convo.otherUserName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const isActive = convoId === activeConvoId;
+    const preview = convo.lastMessageText || 'Start the conversation';
+    const timeLabel = convo.lastMessageTime ? formatConvoTime(convo.lastMessageTime) : '';
+    return `
+      <div class="convo-item ${isActive ? 'active' : ''}" onclick="openCoachConvo('${convoId}')">
+        <div class="convo-avatar" style="background:var(--green-glow);border-color:var(--green);color:var(--green);">${initials}</div>
+        <div class="convo-info">
+          <strong>${convo.otherUserName || 'Unknown'}</strong>
+          <span>${convo.otherUserSub || ''}</span>
+          <p class="convo-preview">${preview}</p>
+        </div>
+        <div class="convo-meta">
+          <span class="convo-time">${timeLabel}</span>
+          ${convo.unread ? '<span class="convo-unread">●</span>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const unreadCount = entries.filter(([, c]) => c.unread).length;
   const badge = document.getElementById('coachUnreadCount');
-  if (badge) badge.textContent = remaining > 0 ? `${remaining} Unread` : 'All Read';
+  if (badge) badge.textContent = unreadCount > 0 ? `${unreadCount} Unread` : 'All Read';
+
+  if (!activeConvoId && entries.length > 0) {
+    openCoachConvo(entries[0][0]);
+  }
+}
+
+function formatConvoTime(timestamp) {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) return date.toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleDateString('en-ZW', { day: 'numeric', month: 'short' });
+}
+
+// --- Open a conversation thread and listen for new messages LIVE ---
+function openCoachConvo(convoId) {
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  const { rtdb, dbRef, onValue, update } = fb;
+
+  activeConvoId = convoId;
+  renderCoachConvoList();
+
+  const convo = conversationsCache[convoId];
+  if (!convo) return;
+
+  document.getElementById('coachChatName').textContent = convo.otherUserName || 'Unknown';
+  document.getElementById('coachChatSub').textContent  = convo.otherUserSub || '';
+  const initials = (convo.otherUserName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  document.getElementById('coachChatAvatar').textContent = initials;
+
+  if (convo.unread) {
+    update(dbRef(rtdb, `userConversations/${myUid}/${convoId}`), { unread: false }).catch(err => {
+      console.error('Failed to mark conversation as read:', err);
+    });
+  }
+
+  if (activeConvoListener) activeConvoListener();
+
+  const messagesRef = dbRef(rtdb, `conversations/${convoId}/messages`);
+  activeConvoListener = onValue(messagesRef, (snapshot) => {
+    const messages = snapshot.val() || {};
+    const sorted = Object.values(messages).sort((a, b) => a.timestamp - b.timestamp);
+    renderCoachMessages(sorted);
+  }, (err) => {
+    console.error('Failed to listen to messages:', err);
+  });
 }
 
 function renderCoachMessages(msgs) {
   const container = document.getElementById('coachChatMessages');
   if (!container) return;
-  container.innerHTML = msgs.map(m => `
-    <div>
-      <div class="msg ${m.from === 'me' ? 'msg-me' : 'msg-them'}">${m.text}</div>
-      <p class="msg-time">${m.time}</p>
-    </div>
-  `).join('');
+
+  if (msgs.length === 0) {
+    container.innerHTML = `<p style="color:var(--muted);font-size:13px;text-align:center;padding:24px;">No messages yet. Say hello!</p>`;
+    return;
+  }
+
+  container.innerHTML = msgs.map(m => {
+    const mine = m.senderId === myUid;
+    const time = new Date(m.timestamp).toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+    return `
+      <div>
+        <div class="msg ${mine ? 'msg-me' : 'msg-them'}">${escapeHtml(m.text)}</div>
+        <p class="msg-time">${time}</p>
+      </div>
+    `;
+  }).join('');
   container.scrollTop = container.scrollHeight;
 }
 
-function sendCoachMessage() {
+// --- Send a message in the currently open conversation ---
+async function sendCoachMessage() {
   const input = document.getElementById('coachChatInput');
   const text  = input.value.trim();
-  if (!text) return;
+  if (!text || !activeConvoId) return;
 
-  const now = new Date().toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
-  coachConversations[activeCoachConvo].messages.push({ from: 'me', text, time: now });
-  renderCoachMessages(coachConversations[activeCoachConvo].messages);
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  const { rtdb, dbRef, push, set, update } = fb;
+  const convo = conversationsCache[activeConvoId];
+  if (!convo) return;
+
   input.value = '';
+  const timestamp = Date.now();
 
-  // Simulate player reply
-  setTimeout(() => {
-    const replies = [
-      'Thank you Coach, I appreciate that!',
-      'Understood, I will keep working hard.',
-      'Thank you for the opportunity!',
-      'I will be available. Thank you Coach!'
-    ];
-    const reply = replies[Math.floor(Math.random() * replies.length)];
-    const replyTime = new Date().toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
-    coachConversations[activeCoachConvo].messages.push({ from: 'them', text: reply, time: replyTime });
-    renderCoachMessages(coachConversations[activeCoachConvo].messages);
-  }, 1500);
+  try {
+    const messagesRef = dbRef(rtdb, `conversations/${activeConvoId}/messages`);
+    const newMsgRef = push(messagesRef);
+    await set(newMsgRef, {
+      senderId: myUid,
+      text,
+      timestamp,
+    });
+
+    await update(dbRef(rtdb, `userConversations/${myUid}/${activeConvoId}`), {
+      lastMessageText: text,
+      lastMessageTime: timestamp,
+      unread: false,
+    });
+
+    await update(dbRef(rtdb, `userConversations/${convo.otherUserId}/${activeConvoId}`), {
+      lastMessageText: text,
+      lastMessageTime: timestamp,
+      unread: true,
+    });
+
+  } catch (err) {
+    console.error('Failed to send message:', err);
+    showCoachToast('Failed to send message. Please try again.');
+    input.value = text;
+  }
+}
+
+// --- Basic HTML escaping so message text can't inject markup ---
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// --- Start (or open) a conversation with a player from their profile modal ---
+// --- Called by the "Message This Player" button in the open modal ---
+function messageThisPlayer() {
+  if (!selectedPlayer) return;
+
+  // Demo/mock players (ids 0-8 from the hardcoded array) have no real Firebase
+  // UID and cannot receive real messages. The one exception is id 0 when it's
+  // been replaced with the logged-in coach's own player-account preview —
+  // but that still isn't a separate, messagable account from this session.
+  messagePlayer(selectedPlayer.uid || null, selectedPlayer.name, `${selectedPlayer.position} · ${selectedPlayer.province}`);
+}
+
+async function messagePlayer(playerUid, playerName, playerSub) {
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  if (!myUid) {
+    showCoachToast('Still connecting — please wait a moment and try again.');
+    return;
+  }
+  if (!playerUid) {
+    showCoachToast('This is demo data and cannot be messaged — only real registered players can be messaged.');
+    return;
+  }
+
+  const { rtdb, dbRef, get, update } = fb;
+
+  // Deterministic conversation ID so the same two users always land in the same thread
+  const convoId = [myUid, playerUid].sort().join('_');
+
+  try {
+    const existingSnap = await get(dbRef(rtdb, `conversations/${convoId}`));
+
+    if (!existingSnap.exists()) {
+      // Brand new conversation — set up both users' index entries
+      const myProfile = JSON.parse(localStorage.getItem('scoutlink_user') || '{}');
+      const myName = myProfile.name || 'Coach';
+      const mySub  = `${myProfile.coachTitle || 'Coach'} · ${myProfile.coachClub || ''}`.trim();
+
+      await update(dbRef(rtdb, `conversations/${convoId}/participants`), {
+        [myUid]: true,
+        [playerUid]: true,
+      });
+
+      await update(dbRef(rtdb, `userConversations/${myUid}/${convoId}`), {
+        otherUserId: playerUid,
+        otherUserName: playerName,
+        otherUserSub: playerSub,
+        lastMessageText: '',
+        lastMessageTime: Date.now(),
+        unread: false,
+      });
+
+      await update(dbRef(rtdb, `userConversations/${playerUid}/${convoId}`), {
+        otherUserId: myUid,
+        otherUserName: myName,
+        otherUserSub: mySub,
+        lastMessageText: '',
+        lastMessageTime: Date.now(),
+        unread: false,
+      });
+    }
+
+    // Switch to the Messages tab and open this conversation
+    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+    const messagesLink = document.querySelector('a[href="#messages"]');
+    if (messagesLink) messagesLink.classList.add('active');
+    document.getElementById('messages')?.scrollIntoView({ behavior: 'smooth' });
+
+    closeModal();
+
+    // Give the conversation list listener a moment to pick up the new thread
+    setTimeout(() => openCoachConvo(convoId), 300);
+
+  } catch (err) {
+    console.error('Failed to start conversation:', err);
+    showCoachToast('Could not start the conversation. Please try again.');
+  }
 }
 
 /* =============================================
@@ -637,3 +835,4 @@ window.setActive             = setActive;
 window.toggleSidebar         = toggleSidebar;
 window.applyFilters          = applyFilters;
 window.openPlayerModal       = openPlayerModal;
+window.messageThisPlayer     = messageThisPlayer;

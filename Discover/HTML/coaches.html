@@ -17,10 +17,10 @@
   <aside class="sidebar" id="sidebar">
     <a href="index.html" class="logo sidebar-logo">Scout<span>Link</span></a>
     <nav class="sidebar-nav">
-      <a href="#" class="sidebar-link">
+      <a href="#coach-dashboard" class="sidebar-link" onclick="setActive(this)">
         <span class="sidebar-icon">📋</span> My Dashboard
       </a>
-      <a href="coaches.html" class="sidebar-link active">
+      <a href="#browse" class="sidebar-link active" onclick="setActive(this)">
         <span class="sidebar-icon">🔍</span> Browse Players
       </a>
       <a href="#assessments" class="sidebar-link" onclick="setActive(this)">
@@ -28,6 +28,7 @@
       </a>
       <a href="#messages" class="sidebar-link" onclick="setActive(this)">
         <span class="sidebar-icon">💬</span> Messages
+        <span class="notif-dot">2</span>
       </a>
       <a href="#settings" class="sidebar-link" onclick="setActive(this)">
         <span class="sidebar-icon">⚙️</span> Settings
@@ -35,7 +36,7 @@
     </nav>
     <button class="sidebar-logout" onclick="logout()">Log Out</button>
   </aside>
-
+ 
   <!-- MAIN -->
   <div class="dashboard-main">
     <header class="topbar">
@@ -45,13 +46,13 @@
         <div class="topbar-avatar">CD</div>
       </div>
     </header>
-
+ 
     <section class="dash-section">
       <div class="section-header">
         <h2 class="section-label" style="font-size:22px;">Browse Players</h2>
         <p style="color:var(--muted);font-size:14px;" id="resultCount">Showing all players</p>
       </div>
-
+ 
       <!-- FILTERS -->
       <div class="filter-bar">
         <div class="filter-group">
@@ -93,22 +94,22 @@
         </div>
         <div class="filter-group">
           <label>Search</label>
-          <input type="text" id="filterSearch" placeholder="Name or club..." oninput="applyFilters()" />
+          <input type="text" id="filterSearch" placeholder="Name or club..." oninput="applyFilters()"/>
         </div>
         <button class="btn btn-ghost" onclick="clearFilters()">Clear Filters</button>
       </div>
-
+ 
       <!-- PLAYER GRID -->
       <div class="player-grid" id="playerGrid">
         <!-- Populated by JS -->
       </div>
-
+ 
       <div class="empty-state hidden" id="noResults">
         <p>🔍</p>
         <p>No players match your filters. Try adjusting the criteria.</p>
       </div>
     </section>
-
+ 
     <!-- PLAYER MODAL -->
     <div class="modal-overlay hidden" id="modalOverlay" onclick="closeModal()">
       <div class="modal" onclick="event.stopPropagation()">
@@ -121,14 +122,16 @@
             <div class="modal-badges" id="modalBadges"></div>
           </div>
         </div>
-
+ 
+        <button class="btn btn-outline" id="modalMessageBtn" style="margin:16px 0 0;width:100%;" onclick="messageThisPlayer()">💬 Message This Player</button>
+ 
         <div class="modal-body">
           <p class="modal-section-label">Bio</p>
           <p id="modalBio" class="modal-bio">—</p>
-
+ 
           <p class="modal-section-label">Highlight Videos</p>
           <div id="modalVideos" class="modal-videos"></div>
-
+ 
           <p class="modal-section-label">Leave an Assessment</p>
           <div class="assess-form">
             <textarea id="assessmentText" rows="4" placeholder="Write your assessment of this player..."></textarea>
@@ -150,10 +153,8 @@
         </div>
       </div>
     </div>
-
-  </div>
-
-   <!-- COACH DASHBOARD OVERVIEW -->
+ 
+    <!-- COACH DASHBOARD OVERVIEW -->
     <section class="dash-section" id="coach-dashboard">
       <h3 class="section-label" style="margin-bottom:20px;">Coach Dashboard</h3>
       <div class="stats-row" style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;">
@@ -197,54 +198,23 @@
     <section class="dash-section" id="messages">
       <div class="section-header">
         <h3 class="section-label">Messages</h3>
-        <span class="badge badge-green" id="coachUnreadCount">2 Unread</span>
+        <span class="badge badge-green" id="coachUnreadCount">No messages</span>
       </div>
       <div class="messages-layout">
-        <!-- Conversation List -->
+        <!-- Conversation List — populated live by coaches.js -->
         <div class="convo-list" id="coachConvoList">
-          <div class="convo-item active" onclick="openCoachConvo(0)">
-            <div class="convo-avatar" style="background:var(--green-glow);border-color:var(--green);color:var(--green);">TM</div>
-            <div class="convo-info">
-              <strong>Tatenda Moyo</strong>
-              <span>Striker · Harare · Age 19</span>
-              <p class="convo-preview">Thank you Coach, I will be there!</p>
-            </div>
-            <div class="convo-meta">
-              <span class="convo-time">10:55 AM</span>
-              <span class="convo-unread">1</span>
-            </div>
-          </div>
-          <div class="convo-item" onclick="openCoachConvo(1)">
-            <div class="convo-avatar" style="background:var(--green-glow);border-color:var(--green);color:var(--green);">BN</div>
-            <div class="convo-info">
-              <strong>Blessing Ncube</strong>
-              <span>Midfielder · Bulawayo · Age 21</span>
-              <p class="convo-preview">I appreciate the feedback, will work on it.</p>
-            </div>
-            <div class="convo-meta">
-              <span class="convo-time">Yesterday</span>
-              <span class="convo-unread">1</span>
-            </div>
-          </div>
-          <div class="convo-item" onclick="openCoachConvo(2)">
-            <div class="convo-avatar" style="background:var(--green-glow);border-color:var(--green);color:var(--green);">SD</div>
-            <div class="convo-info">
-              <strong>Simbarashe Dube</strong>
-              <span>Goalkeeper · Harare · Age 17</span>
-              <p class="convo-preview">Looking forward to the trials, Coach!</p>
-            </div>
-            <div class="convo-meta">
-              <span class="convo-time">Mon</span>
-            </div>
+          <div class="empty-state">
+            <p>💬</p>
+            <p>No conversations yet. Message a player from their profile to start one.</p>
           </div>
         </div>
         <!-- Chat Window -->
-        <div class="chat-window" id="coachChatWindow">
+        <div class="chat-window hidden" id="coachChatWindow">
           <div class="chat-header" id="coachChatHeader">
-            <div class="convo-avatar" style="background:var(--green-glow);border-color:var(--green);color:var(--green);" id="coachChatAvatar">TM</div>
+            <div class="convo-avatar" style="background:var(--green-glow);border-color:var(--green);color:var(--green);" id="coachChatAvatar"></div>
             <div>
-              <strong id="coachChatName">Tatenda Moyo</strong>
-              <span id="coachChatSub">Striker · Harare · Age 19</span>
+              <strong id="coachChatName"></strong>
+              <span id="coachChatSub"></span>
             </div>
           </div>
           <div class="chat-messages" id="coachChatMessages"></div>
@@ -335,7 +305,7 @@
     </section>
  
   </div>
-
+  
   <script src="../js/coaches.js"></script>
 </body>
 

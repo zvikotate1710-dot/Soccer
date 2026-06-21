@@ -17,29 +17,32 @@
   <aside class="sidebar" id="sidebar">
     <a href="index.html" class="logo sidebar-logo">Scout<span>Link</span></a>
     <nav class="sidebar-nav">
-      <a href="player-dashboard.html" class="sidebar-link active">
+      <a href="#profile" class="sidebar-link active" onclick="setActive(this)">
         <span class="sidebar-icon">⚽</span> My Profile
       </a>
-      <a href="#videos" class="sidebar-link">
+      <a href="#videos" class="sidebar-link" onclick="setActive(this)">
         <span class="sidebar-icon">🎬</span> My Videos
       </a>
-      <a href="#assessments" class="sidebar-link">
+      <a href="#assessments" class="sidebar-link" onclick="setActive(this)">
         <span class="sidebar-icon">📋</span> Assessments
       </a>
-      <a href="#messages" class="sidebar-link">
+      <a href="coaches.html" class="sidebar-link">
+        <span class="sidebar-icon">🔍</span> Browse Coaches
+      </a>
+      <a href="#messages" class="sidebar-link" onclick="setActive(this)">
         <span class="sidebar-icon">💬</span> Messages
         <span class="notif-dot">2</span>
       </a>
-      <a href="#settings" class="sidebar-link">
+      <a href="#settings" class="sidebar-link" onclick="setActive(this)">
         <span class="sidebar-icon">⚙️</span> Settings
       </a>
     </nav>
     <button class="sidebar-logout" onclick="logout()">Log Out</button>
   </aside>
-
+ 
   <!-- MAIN CONTENT -->
   <div class="dashboard-main">
-
+ 
     <!-- TOP BAR -->
     <header class="topbar">
       <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
@@ -48,7 +51,7 @@
         <div class="topbar-avatar" id="topbarAvatar">PN</div>
       </div>
     </header>
-
+ 
     <!-- PROFILE SECTION -->
     <section class="dash-section" id="profile">
       <div class="profile-card">
@@ -66,18 +69,18 @@
         </div>
         <button class="btn btn-outline" onclick="toggleEditProfile()">Edit Profile</button>
       </div>
-
+ 
       <!-- Edit Profile Form -->
       <div class="edit-form hidden" id="editProfileForm">
         <h3 class="section-label">Edit Your Profile</h3>
         <div class="edit-grid">
           <div class="form-group">
             <label>Full Name</label>
-            <input type="text" id="editName" placeholder="Your full name" />
+            <input type="text" id="editName" placeholder="Your full name"/>
           </div>
           <div class="form-group">
             <label>Age</label>
-            <input type="number" id="editAge" placeholder="Age" min="10" max="45" />
+            <input type="number" id="editAge" placeholder="Age" min="10" max="45"/>
           </div>
           <div class="form-group">
             <label>Position</label>
@@ -108,12 +111,11 @@
           </div>
           <div class="form-group full-width">
             <label>Current Club / Team</label>
-            <input type="text" id="editClub" placeholder="e.g. Dynamos FC, School team, or Free agent" />
+            <input type="text" id="editClub" placeholder="e.g. Dynamos FC, School team, or Free agent"/>
           </div>
           <div class="form-group full-width">
             <label>Bio (tell coaches about yourself)</label>
-            <textarea id="editBio" rows="3"
-              placeholder="e.g. Fast, technical winger with 3 years of competitive experience..."></textarea>
+            <textarea id="editBio" rows="3" placeholder="e.g. Fast, technical winger with 3 years of competitive experience..."></textarea>
           </div>
         </div>
         <div class="btn-row">
@@ -122,7 +124,7 @@
         </div>
       </div>
     </section>
-
+ 
     <!-- STATS ROW -->
     <section class="stats-row">
       <div class="stat-card">
@@ -142,18 +144,18 @@
         <span class="stat-card-label">Messages</span>
       </div>
     </section>
-
+ 
     <!-- VIDEOS SECTION -->
     <section class="dash-section" id="videos">
       <div class="section-header">
         <h3 class="section-label">My Highlight Videos</h3>
         <button class="btn btn-primary" onclick="toggleUploadForm()">+ Add Video</button>
       </div>
-
+ 
       <!-- Upload Form -->
       <div class="upload-form hidden" id="uploadForm">
-        
-         <!-- Toggle: File or Link -->
+ 
+        <!-- Toggle: File or Link -->
         <div class="upload-toggle">
           <button class="upload-tab active" id="tabFile" onclick="switchUploadTab('file')">📁 Upload from Device</button>
           <button class="upload-tab" id="tabLink" onclick="switchUploadTab('link')">🔗 Paste a Link</button>
@@ -206,7 +208,7 @@
           <button class="btn btn-primary" onclick="addVideo()">Upload Video</button>
         </div>
       </div>
-
+ 
       <!-- Video List -->
       <div class="video-grid" id="videoGrid">
         <div class="empty-state" id="videosEmpty">
@@ -215,7 +217,7 @@
         </div>
       </div>
     </section>
-
+ 
     <!-- ASSESSMENTS SECTION -->
     <section class="dash-section" id="assessments">
       <h3 class="section-label">Coach Assessments</h3>
@@ -234,72 +236,39 @@
             </div>
             <span class="badge badge-green">Positive</span>
           </div>
-          <p class="assessment-body">"Strong first touch and excellent spatial awareness. Moves well off the ball.
-            Recommend this player for regional U21 trials. Keep working on left foot delivery."</p>
+          <p class="assessment-body">"Strong first touch and excellent spatial awareness. Moves well off the ball. Recommend this player for regional U21 trials. Keep working on left foot delivery."</p>
           <p class="assessment-date">12 June 2025</p>
         </div>
       </div>
     </section>
-
-    
+ 
     <!-- MESSAGES SECTION -->
     <section class="dash-section" id="messages">
       <div class="section-header">
         <h3 class="section-label">Messages</h3>
-        <span class="badge badge-green" id="unreadCount">2 Unread</span>
+        <span class="badge badge-green" id="unreadCount">No messages</span>
       </div>
  
       <div class="messages-layout">
-        <!-- Conversation List -->
+        <!-- Conversation List — populated live by player-dashboard.js -->
         <div class="convo-list" id="convoList">
-          <div class="convo-item active" onclick="openConvo(0)">
-            <div class="convo-avatar">CD</div>
-            <div class="convo-info">
-              <strong>Coach Dlamini</strong>
-              <span>CAPS United Academy</span>
-              <p class="convo-preview">I'd like to invite you to our trials next weekend...</p>
-            </div>
-            <div class="convo-meta">
-              <span class="convo-time">10:42 AM</span>
-              <span class="convo-unread">1</span>
-            </div>
-          </div>
-          <div class="convo-item" onclick="openConvo(1)">
-            <div class="convo-avatar">MN</div>
-            <div class="convo-info">
-              <strong>Coach Ndlovu</strong>
-              <span>Highlanders FC</span>
-              <p class="convo-preview">Great footwork on your latest video. Can we chat?</p>
-            </div>
-            <div class="convo-meta">
-              <span class="convo-time">Yesterday</span>
-              <span class="convo-unread">1</span>
-            </div>
-          </div>
-          <div class="convo-item" onclick="openConvo(2)">
-            <div class="convo-avatar">TM</div>
-            <div class="convo-info">
-              <strong>Coach Tawanda</strong>
-              <span>Dynamos FC Academy</span>
-              <p class="convo-preview">Thanks for reaching out. We'll be in touch.</p>
-            </div>
-            <div class="convo-meta">
-              <span class="convo-time">Mon</span>
-            </div>
+          <div class="empty-state">
+            <p>💬</p>
+            <p>No conversations yet. When a coach messages you, it will appear here.</p>
           </div>
         </div>
  
         <!-- Chat Window -->
-        <div class="chat-window" id="chatWindow">
+        <div class="chat-window hidden" id="chatWindow">
           <div class="chat-header" id="chatHeader">
-            <div class="convo-avatar">CD</div>
+            <div class="convo-avatar"></div>
             <div>
-              <strong id="chatName">Coach Dlamini</strong>
-              <span id="chatSub">CAPS United Academy · Harare</span>
+              <strong id="chatName"></strong>
+              <span id="chatSub"></span>
             </div>
           </div>
           <div class="chat-messages" id="chatMessages">
-            <!-- Populated by JS -->
+            <!-- Populated live by player-dashboard.js -->
           </div>
           <div class="chat-input-row">
             <input type="text" id="chatInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendMessage()"/>
@@ -417,11 +386,11 @@
             <button class="btn btn-ghost" onclick="logout()">Log Out</button>
             <button class="btn" style="background:#FF5A5A20;color:#FF5A5A;border:1px solid #FF5A5A40;" onclick="confirmDeleteAccount()">Delete Account</button>
           </div>
-         </div>
+        </div>
  
       </div>
     </section>
-
+ 
   </div><!-- end dashboard-main -->
 
   <script src="../js/player-dashboard.js"></script>
