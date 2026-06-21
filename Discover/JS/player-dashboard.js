@@ -2,39 +2,62 @@
    SCOUTLINK — PLAYER DASHBOARD JS
    ============================================= */
 
-import {
-  auth, db, onAuthStateChanged, signOut,
-  doc, getDoc, updateDoc, deleteDoc,
-  updateEmail, updatePassword, deleteUser,
-  EmailAuthProvider, reauthenticateWithCredential
-} from './firebase-config.js';
+// Firebase loads asynchronously. Because every function below is a
+// hoisted `function` declaration, sidebar navigation, the upload tabs,
+// etc. work immediately — only the actual Firebase calls inside each
+// function wait on `firebase` being populated.
+let firebase = null;
+let firebaseLoadError = null;
 
-// --- Auth Guard: REAL Firebase session check ---
-// onAuthStateChanged fires once Firebase confirms the session (or its absence).
-// Until then, nothing on the page renders, preventing a flash of someone else's data.
-onAuthStateChanged(auth, async (firebaseUser) => {
-  if (!firebaseUser) {
-    window.location.href = 'login.html';
-    return;
+function requireFirebase() {
+  if (firebaseLoadError) {
+    showToast('Could not connect to the server. Check your connection and refresh.');
+    return null;
   }
+  if (!firebase) {
+    showToast('Still connecting — please wait a moment and try again.');
+    return null;
+  }
+  return firebase;
+}
 
-  // Pull the authoritative profile from Firestore (source of truth)
+(async () => {
   try {
-    const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
-    if (snap.exists()) {
-      const profile = snap.data();
-      localStorage.setItem('scoutlink_user', JSON.stringify({ ...profile, uid: firebaseUser.uid }));
-    }
-  } catch (err) {
-    console.error('Failed to load profile from Firestore:', err);
-  }
+    firebase = await import('./firebase-config.js');
+    const { auth, db, onAuthStateChanged, doc, getDoc } = firebase;
 
-  // Now that we have a confirmed, fresh profile, render the dashboard
-  loadPlayerData();
-  renderProfile();
-  renderVideos();
-  updateStats();
-});
+    // --- Auth Guard: REAL Firebase session check ---
+    // onAuthStateChanged fires once Firebase confirms the session (or its absence).
+    onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Pull the authoritative profile from Firestore (source of truth)
+      try {
+        const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
+        if (snap.exists()) {
+          const profile = snap.data();
+          localStorage.setItem('scoutlink_user', JSON.stringify({ ...profile, uid: firebaseUser.uid }));
+        }
+      } catch (err) {
+        console.error('Failed to load profile from Firestore:', err);
+      }
+
+      // Now that we have a confirmed, fresh profile, render the dashboard
+      loadPlayerData();
+      renderProfile();
+      renderVideos();
+      updateStats();
+    });
+
+  } catch (err) {
+    firebaseLoadError = err;
+    console.error('Firebase failed to load in player-dashboard.js:', err);
+    showToast('Could not connect to the server. Some features may not work — please refresh.');
+  }
+})();
 
 
 let playerData = {
@@ -145,6 +168,10 @@ async function saveProfile() {
   toggleEditProfile();
 
   // Persist to Firestore (the real database) in the background
+  const fb = requireFirebase();
+  if (!fb) return; // already showed a toast explaining why
+
+  const { auth, db, doc, updateDoc } = fb;
   const firebaseUser = auth.currentUser;
   if (firebaseUser) {
     try {
@@ -404,12 +431,14 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
-// --- Logout — REAL FIREBASE SIGN OUT ---
+// --- Logout — REAL FIREBASE SIGN OUT (falls back to local-only if Firebase is unavailable) ---
 async function logout() {
-  try {
-    await signOut(auth);
-  } catch (err) {
-    console.error('Sign out error:', err);
+  if (firebase) {
+    try {
+      await firebase.signOut(firebase.auth);
+    } catch (err) {
+      console.error('Sign out error:', err);
+    }
   }
   localStorage.removeItem('scoutlink_loggedIn');
   localStorage.removeItem('scoutlink_user');
@@ -547,6 +576,11 @@ window.addEventListener('load', () => {
    SETTINGS
    ============================================= */
 async function saveAccountSettings() {
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  const { auth, db, doc, updateDoc, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } = fb;
+
   const email    = document.getElementById('settingsEmail').value.trim();
   const password = document.getElementById('settingsPassword').value;
   const firebaseUser = auth.currentUser;
@@ -605,6 +639,10 @@ async function confirmDeleteAccount() {
   const confirmed = confirm('Are you sure you want to delete your account? This cannot be undone.');
   if (!confirmed) return;
 
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  const { auth, db, doc, deleteDoc, deleteUser, EmailAuthProvider, reauthenticateWithCredential } = fb;
   const firebaseUser = auth.currentUser;
   if (!firebaseUser) {
     localStorage.clear();

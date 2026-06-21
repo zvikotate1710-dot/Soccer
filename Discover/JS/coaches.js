@@ -2,34 +2,58 @@
    SCOUTLINK — COACHES BROWSE JS
    ============================================= */
 
-import {
-  auth, db, onAuthStateChanged, signOut,
-  doc, getDoc, updateDoc, deleteDoc,
-  updateEmail, deleteUser,
-  EmailAuthProvider, reauthenticateWithCredential
-} from './firebase-config.js';
+// Firebase loads asynchronously below. Every function in this file is a
+// hoisted `function` declaration, so sidebar nav, filters, and the modal
+// all work immediately — only the actual Firebase calls inside each
+// function wait on `firebase` being populated.
+let firebase = null;
+let firebaseLoadError = null;
 
-// --- Auth Guard: REAL Firebase session check ---
-onAuthStateChanged(auth, async (firebaseUser) => {
-  if (!firebaseUser) {
-    window.location.href = 'login.html';
-    return;
+function requireFirebase() {
+  if (firebaseLoadError) {
+    showCoachToast('Could not connect to the server. Check your connection and refresh.');
+    return null;
   }
+  if (!firebase) {
+    showCoachToast('Still connecting — please wait a moment and try again.');
+    return null;
+  }
+  return firebase;
+}
 
-  // Pull the authoritative coach profile from Firestore
+(async () => {
   try {
-    const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
-    if (snap.exists()) {
-      const profile = snap.data();
-      localStorage.setItem('scoutlink_user', JSON.stringify({ ...profile, uid: firebaseUser.uid }));
-    }
-  } catch (err) {
-    console.error('Failed to load coach profile from Firestore:', err);
-  }
+    firebase = await import('./firebase-config.js');
+    const { auth, db, onAuthStateChanged, doc, getDoc } = firebase;
 
-  // Now render the dashboard with a confirmed, fresh profile
-  initCoachDashboard();
-});
+    // --- Auth Guard: REAL Firebase session check ---
+    onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Pull the authoritative coach profile from Firestore
+      try {
+        const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
+        if (snap.exists()) {
+          const profile = snap.data();
+          localStorage.setItem('scoutlink_user', JSON.stringify({ ...profile, uid: firebaseUser.uid }));
+        }
+      } catch (err) {
+        console.error('Failed to load coach profile from Firestore:', err);
+      }
+
+      // Now render the dashboard with a confirmed, fresh profile
+      initCoachDashboard();
+    });
+
+  } catch (err) {
+    firebaseLoadError = err;
+    console.error('Firebase failed to load in coaches.js:', err);
+    showCoachToast('Could not connect to the server. Some features may not work — please refresh.');
+  }
+})();
 
 
 // Mock player database (Zimbabwe-specific)
@@ -256,12 +280,14 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
-// --- Logout — REAL FIREBASE SIGN OUT ---
+// --- Logout — REAL FIREBASE SIGN OUT (falls back to local-only if Firebase is unavailable) ---
 async function logout() {
-  try {
-    await signOut(auth);
-  } catch (err) {
-    console.error('Sign out error:', err);
+  if (firebase) {
+    try {
+      await firebase.signOut(firebase.auth);
+    } catch (err) {
+      console.error('Sign out error:', err);
+    }
   }
   localStorage.removeItem('scoutlink_loggedIn');
   localStorage.removeItem('scoutlink_user');
@@ -475,6 +501,11 @@ function sendCoachMessage() {
    SETTINGS
    ============================================= */
 async function saveCoachSettings() {
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  const { auth, db, doc, updateDoc, updateEmail, EmailAuthProvider, reauthenticateWithCredential } = fb;
+
   const firebaseUser = auth.currentUser;
   if (!firebaseUser) {
     showCoachToast('You must be logged in to change settings.');
@@ -547,6 +578,10 @@ async function confirmDeleteAccount() {
   const confirmed = confirm('Delete your account? This cannot be undone.');
   if (!confirmed) return;
 
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  const { auth, db, doc, deleteDoc, deleteUser, EmailAuthProvider, reauthenticateWithCredential } = fb;
   const firebaseUser = auth.currentUser;
   if (!firebaseUser) {
     localStorage.clear();
@@ -602,4 +637,3 @@ window.setActive             = setActive;
 window.toggleSidebar         = toggleSidebar;
 window.applyFilters          = applyFilters;
 window.openPlayerModal       = openPlayerModal;
- 

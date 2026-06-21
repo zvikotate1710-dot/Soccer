@@ -2,13 +2,19 @@
    SCOUTLINK — LOGIN JS (Firebase Auth + Firestore)
    ============================================= */
 
-import {
-  auth,
-  db,
-  signInWithEmailAndPassword,
-  doc,
-  getDoc
-} from './firebase-config.js';
+// Firebase loads asynchronously so togglePassword() works immediately
+// even if the import is slow or fails. Only handleLogin() needs it.
+let firebase = null;
+let firebaseLoadError = null;
+
+(async () => {
+  try {
+    firebase = await import('./firebase-config.js');
+  } catch (err) {
+    firebaseLoadError = err;
+    console.error('Firebase failed to load in login.js:', err);
+  }
+})();
 
 window.addEventListener('DOMContentLoaded', () => {
   ['loginPassword', 'loginEmail'].forEach(id => {
@@ -17,7 +23,7 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// --- Toggle password visibility ---
+// --- Toggle password visibility (no Firebase needed) ---
 function togglePassword() {
   const input = document.getElementById('loginPassword');
   const btn   = document.querySelector('.toggle-pw');
@@ -42,6 +48,20 @@ async function handleLogin() {
     errorEl.classList.remove('hidden');
     return;
   }
+
+  // Fail loudly if Firebase never loaded, instead of doing nothing
+  if (firebaseLoadError) {
+    errorEl.textContent = 'Could not connect to the server. Check your internet connection and try again.';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  if (!firebase) {
+    errorEl.textContent = 'Still connecting — please wait a moment and try again.';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+
+  const { auth, db, signInWithEmailAndPassword, doc, getDoc } = firebase;
 
   errorEl.classList.add('hidden');
 
