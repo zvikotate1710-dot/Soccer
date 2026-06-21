@@ -24,7 +24,7 @@ function requireFirebase() {
 (async () => {
   try {
     firebase = await import('./firebase-config.js');
-    const { auth, db, onAuthStateChanged, doc, getDoc } = firebase;
+    const { auth, db, onAuthStateChanged, doc, getDoc, collection, getDocs, orderBy, query } = firebase;
 
     // --- Auth Guard: REAL Firebase session check ---
     // onAuthStateChanged fires once Firebase confirms the session (or its absence).
@@ -43,6 +43,30 @@ function requireFirebase() {
         }
       } catch (err) {
         console.error('Failed to load profile from Firestore:', err);
+      }
+
+      // Pull this player's videos from their Firestore subcollection
+      // (users/{uid}/videos), which is now the source of truth for videos.
+      try {
+        const videosRef = collection(db, 'users', firebaseUser.uid, 'videos');
+        const videosQuery = query(videosRef, orderBy('uploadedAt', 'desc'));
+        const videosSnap = await getDocs(videosQuery);
+
+        playerData.videos = videosSnap.docs.map(d => {
+          const data = d.data();
+          // Firestore stores uploadedAt as a Timestamp object; convert it to
+          // the same display string format used everywhere else in the UI.
+          const date = data.uploadedAt && typeof data.uploadedAt.toDate === 'function'
+            ? data.uploadedAt.toDate().toLocaleDateString('en-ZW')
+            : 'Recently';
+          return { id: d.id, ...data, date };
+        });
+        localStorage.setItem('scoutlink_videos', JSON.stringify(playerData.videos));
+      } catch (err) {
+        console.error('Failed to load videos from Firestore:', err);
+        // Fall back to whatever was cached locally so the page isn't empty
+        const cached = localStorage.getItem('scoutlink_videos');
+        if (cached) playerData.videos = JSON.parse(cached);
       }
 
       // Now that we have a confirmed, fresh profile, render the dashboard
@@ -98,11 +122,9 @@ function loadPlayerData() {
     }
   }
 
-  // Load videos from storage
-  const storedVideos = localStorage.getItem('scoutlink_videos');
-  if (storedVideos) {
-    playerData.videos = JSON.parse(storedVideos);
-  }
+  // NOTE: videos are no longer loaded here — they're fetched directly from
+  // Firestore (users/{uid}/videos) in the auth guard above, before this
+  // function runs, so playerData.videos is already populated and fresh.
 }
 
 // --- Render Profile ---
@@ -214,10 +236,13 @@ function handleFileSelect(event) {
     return;
   }
 
-  // Validate size — 500MB max
-  const maxSize = 500 * 1024 * 1024;
+  // Validate size — 100MB max.
+  // Firebase's free tier gives 5GB total Storage — at 500MB/video that's
+  // only ~10 videos for the entire platform. 100MB keeps room for hundreds
+  // of highlight clips while still fitting a typical 2-3 minute reel.
+  const maxSize = 100 * 1024 * 1024;
   if (file.size > maxSize) {
-    alert('File is too large. Maximum size is 500MB.');
+    alert('File is too large. Maximum size is 100MB.');
     return;
   }
 
@@ -283,89 +308,146 @@ function addVideo() {
   if (!title) { alert('Please enter a video title.'); return; }
 
   if (currentUploadTab === 'file') {
-    // --- File upload path ---
+    // --- File upload path — REAL Firebase Storage upload ---
     if (!selectedVideoFile) { alert('Please select a video file from your device.'); return; }
-    simulateFileUpload(title, desc, selectedVideoFile);
+    uploadVideoFile(title, desc, selectedVideoFile);
 
   } else {
-    // --- Link path ---
+    // --- Link path — metadata only, no file upload needed ---
     const url = document.getElementById('videoUrl').value.trim();
     if (!url || !url.startsWith('http')) { alert('Please enter a valid YouTube or Vimeo link.'); return; }
 
-    const video = {
-      id: Date.now(),
-      title,
-      url,
-      desc,
-      type: 'link',
-      date: new Date().toLocaleDateString('en-ZW')
-    };
-    saveVideo(video);
+    saveVideo({ title, url, desc, type: 'link' });
   }
 }
 
-// --- Simulate file upload with progress bar ---
-function simulateFileUpload(title, desc, file) {
-  const progress      = document.getElementById('uploadProgress');
-  const fill          = document.getElementById('progressFill');
-  const label         = document.getElementById('progressLabel');
-  const uploadBtn     = document.querySelector('#uploadForm .btn-primary');
+// --- Upload a video file to Firebase Storage, with a REAL progress listener ---
+async function uploadVideoFile(title, desc, file) {
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  const { auth, storage, ref, uploadBytesResumable, getDownloadURL } = fb;
+  const firebaseUser = auth.currentUser;
+  if (!firebaseUser) {
+    showToast('You must be logged in to upload a video.');
+    return;
+  }
+
+  const progress  = document.getElementById('uploadProgress');
+  const fill      = document.getElementById('progressFill');
+  const label     = document.getElementById('progressLabel');
+  const uploadBtn = document.querySelector('#uploadForm .btn-primary');
 
   progress.classList.remove('hidden');
   if (uploadBtn) { uploadBtn.disabled = true; uploadBtn.textContent = 'Uploading...'; }
 
-  let pct = 0;
-  const interval = setInterval(() => {
-    pct += Math.floor(Math.random() * 12) + 4;
-    if (pct >= 100) {
-      pct = 100;
-      clearInterval(interval);
+  // Sanitise the filename and namespace it under this user's folder so
+  // Storage security rules can restrict access per-user.
+  const safeName  = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const storagePath = `videos/${firebaseUser.uid}/${Date.now()}_${safeName}`;
+  const storageRef   = ref(storage, storagePath);
 
-      fill.style.width   = '100%';
-      label.textContent  = 'Upload complete!';
+  const uploadTask = uploadBytesResumable(storageRef, file);
 
-      setTimeout(() => {
-        // Save with a local object URL so the video is playable from device
-        const localUrl = URL.createObjectURL(file);
-        const video = {
-          id: Date.now(),
+  uploadTask.on('state_changed',
+    (snapshot) => {
+      // REAL upload progress, reported directly by Firebase — not simulated.
+      const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+      fill.style.width  = pct + '%';
+      label.textContent = `Uploading... ${pct}%`;
+    },
+    (error) => {
+      // Upload failed — show why, instead of silently doing nothing.
+      console.error('Video upload error:', error);
+      let msg = 'Upload failed. Please try again.';
+      if (error.code === 'storage/unauthorized') {
+        msg = 'You are not authorised to upload. Please log out and back in.';
+      } else if (error.code === 'storage/canceled') {
+        msg = 'Upload was cancelled.';
+      } else if (error.code === 'storage/quota-exceeded') {
+        msg = 'Storage quota exceeded. Please contact support.';
+      }
+      showToast(msg);
+
+      progress.classList.add('hidden');
+      fill.style.width  = '0%';
+      label.textContent = '';
+      if (uploadBtn) { uploadBtn.disabled = false; uploadBtn.textContent = 'Upload Video'; }
+    },
+    async () => {
+      // Upload finished successfully — get the permanent, shareable download URL
+      try {
+        const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+
+        label.textContent = 'Upload complete!';
+        fill.style.width  = '100%';
+
+        await saveVideo({
           title,
-          url: localUrl,
+          url: downloadUrl,
           desc,
           type: 'file',
           fileName: file.name,
-          date: new Date().toLocaleDateString('en-ZW')
-        };
-        saveVideo(video);
+          storagePath, // kept so deleteVideo() can remove the actual file later
+        });
 
-        // Reset progress
+      } catch (err) {
+        console.error('Failed to finalise upload:', err);
+        showToast('Upload finished, but saving the video record failed. Please try again.');
+      } finally {
         progress.classList.add('hidden');
         fill.style.width  = '0%';
         label.textContent = '';
         if (uploadBtn) { uploadBtn.disabled = false; uploadBtn.textContent = 'Upload Video'; }
-      }, 600);
-    } else {
-      fill.style.width  = pct + '%';
-      label.textContent = `Uploading... ${pct}%`;
+      }
     }
-  }, 120);
+  );
 }
 
-// --- Save video and update UI ---
-function saveVideo(video) {
-  playerData.videos.unshift(video);
-  localStorage.setItem('scoutlink_videos', JSON.stringify(playerData.videos));
+// --- Save video metadata to Firestore (source of truth) + update UI ---
+async function saveVideo(videoData) {
+  const fb = requireFirebase();
+  if (!fb) return;
 
-  // Clear form
-  document.getElementById('videoTitle').value = '';
-  document.getElementById('videoUrl').value   = '';
-  document.getElementById('videoDesc').value  = '';
-  clearFile();
-  toggleUploadForm();
+  const { auth, db, collection, addDoc, serverTimestamp } = fb;
+  const firebaseUser = auth.currentUser;
+  if (!firebaseUser) {
+    showToast('You must be logged in to add a video.');
+    return;
+  }
 
-  renderVideos();
-  updateStats();
-  showToast('Video added!');
+  try {
+    const videosRef = collection(db, 'users', firebaseUser.uid, 'videos');
+    const docRef = await addDoc(videosRef, {
+      ...videoData,
+      uploadedAt: serverTimestamp(),
+    });
+
+    // Reflect immediately in the UI with a local timestamp
+    // (serverTimestamp() resolves async server-side, so we show "now" for display).
+    const newVideo = {
+      id: docRef.id,
+      ...videoData,
+      date: new Date().toLocaleDateString('en-ZW'),
+    };
+    playerData.videos.unshift(newVideo);
+    localStorage.setItem('scoutlink_videos', JSON.stringify(playerData.videos));
+
+    // Clear form
+    document.getElementById('videoTitle').value = '';
+    document.getElementById('videoUrl').value   = '';
+    document.getElementById('videoDesc').value  = '';
+    clearFile();
+    toggleUploadForm();
+
+    renderVideos();
+    updateStats();
+    showToast('Video added!');
+
+  } catch (err) {
+    console.error('Failed to save video metadata to Firestore:', err);
+    showToast('Video upload succeeded, but saving the record failed. Please refresh and check My Videos.');
+  }
 }
 
 
@@ -406,7 +488,7 @@ function renderVideos() {
         </div>
         <div class="video-item-actions">
           ${openBtn}
-          <button class="btn btn-ghost btn-xs" onclick="deleteVideo(${v.id})">Delete</button>
+          <button class="btn btn-ghost btn-xs" onclick="deleteVideo('${v.id}')">Delete</button>
         </div>
       </div>
     `;
@@ -417,13 +499,50 @@ function openVideo(encodedUrl) {
   window.open(decodeURIComponent(encodedUrl), '_blank');
 }
 
-function deleteVideo(id) {
+async function deleteVideo(id) {
   if (!confirm('Remove this video?')) return;
-  playerData.videos = playerData.videos.filter(v => v.id !== id);
-  localStorage.setItem('scoutlink_videos', JSON.stringify(playerData.videos));
-  renderVideos();
-  updateStats();
-  showToast('Video removed.');
+
+  const fb = requireFirebase();
+  if (!fb) return;
+
+  const { auth, db, storage, doc, deleteDoc, ref, deleteObject } = fb;
+  const firebaseUser = auth.currentUser;
+  if (!firebaseUser) {
+    showToast('You must be logged in to delete a video.');
+    return;
+  }
+
+  // Find the video locally first so we know its storagePath (if it's a device upload)
+  const video = playerData.videos.find(v => v.id === id);
+
+  try {
+    // 1. Delete the Firestore record
+    await deleteDoc(doc(db, 'users', firebaseUser.uid, 'videos', id));
+
+    // 2. If it was a device upload, also delete the actual file from Storage.
+    //    Link-type videos have no storagePath, so this is skipped for those.
+    if (video && video.type === 'file' && video.storagePath) {
+      try {
+        await deleteObject(ref(storage, video.storagePath));
+      } catch (storageErr) {
+        // Not fatal — the metadata is already gone, so the video disappears
+        // from the UI either way. Log it so an orphaned file can be cleaned
+        // up manually if needed.
+        console.error('Failed to delete file from Storage (metadata was removed):', storageErr);
+      }
+    }
+
+    // 3. Update local state + UI
+    playerData.videos = playerData.videos.filter(v => v.id !== id);
+    localStorage.setItem('scoutlink_videos', JSON.stringify(playerData.videos));
+    renderVideos();
+    updateStats();
+    showToast('Video removed.');
+
+  } catch (err) {
+    console.error('Failed to delete video:', err);
+    showToast('Failed to remove video. Please try again.');
+  }
 }
 
 // --- Sidebar Toggle ---
@@ -702,4 +821,3 @@ window.toggleUploadForm      = toggleUploadForm;
 window.handleFileSelect      = handleFileSelect;
 window.deleteVideo           = deleteVideo;
 window.openVideo             = openVideo;
- 

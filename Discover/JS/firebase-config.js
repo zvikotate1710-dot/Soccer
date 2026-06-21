@@ -1,6 +1,6 @@
 /* =============================================
    SCOUTLINK — FIREBASE CONFIG
-   Shared initialization for Auth + Firestore
+   Shared initialization for Auth + Firestore + Storage
    ============================================= */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
@@ -25,11 +25,20 @@ import {
   updateDoc,
   deleteDoc,
   collection,
+  addDoc,
   query,
   where,
+  orderBy,
   getDocs,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  deleteObject
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js";
 
 // --- Your Firebase project config ---
 const firebaseConfig = {
@@ -42,15 +51,17 @@ const firebaseConfig = {
 };
 
 // --- Initialize ---
-const app  = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db   = getFirestore(app);
+const app     = initializeApp(firebaseConfig);
+const auth    = getAuth(app);
+const db      = getFirestore(app);
+const storage = getStorage(app);
 
 // --- Export everything pages will need ---
 export {
   app,
   auth,
   db,
+  storage,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
@@ -67,8 +78,14 @@ export {
   updateDoc,
   deleteDoc,
   collection,
+  addDoc,
   query,
   where,
+  orderBy,
   getDocs,
-  serverTimestamp
+  serverTimestamp,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  deleteObject
 };
