@@ -74,6 +74,7 @@ function requireFirebase() {
       renderProfile();
       renderVideos();
       updateStats();
+      renderAssessments();
 
       // Start listening for real, live conversations (Phase 5 — Realtime Database)
       initMessaging(firebaseUser.uid);
@@ -150,6 +151,10 @@ function renderProfile() {
   setVal('editProvince', playerData.province);
   setVal('editClub', playerData.club);
   setVal('editBio', playerData.bio);
+
+  // Dismiss profile skeleton, reveal real content
+  hideSkeleton('skeletonProfile');
+  showSection('profile');
 }
 
 // --- Update Stats ---
@@ -158,6 +163,10 @@ function updateStats() {
   setEl('statVideos', playerData.videos.length);
   setEl('statAssessments', playerData.assessments);
   setEl('statMessages', playerData.messages);
+
+  // Dismiss stats skeleton, reveal real content
+  hideSkeleton('skeletonStats');
+  showSection('statsRow');
 }
 
 // --- Toggle Edit Form ---
@@ -460,8 +469,13 @@ function renderVideos() {
   const empty = document.getElementById('videosEmpty');
   if (!grid) return;
 
+  // Always dismiss skeleton cards first, regardless of whether there are real videos
+  ['skeletonVideo1','skeletonVideo2','skeletonVideo3'].forEach(id => hideSkeleton(id));
+
   if (playerData.videos.length === 0) {
+    // Remove any leftover skeleton HTML (innerHTML wipes it cleanly)
     grid.innerHTML = '';
+    grid.appendChild(empty);
     if (empty) empty.classList.remove('hidden');
     return;
   }
@@ -568,6 +582,30 @@ async function logout() {
 }
 
 // --- Helpers ---
+// --- Skeleton helpers ---
+function hideSkeleton(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = 'none';
+}
+function showSection(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('hidden');
+}
+
+// --- Render Assessments --- dismiss skeletons and show real content ---
+function renderAssessments() {
+  // Dismiss skeleton assessment cards
+  hideSkeleton('skeletonAssess1');
+  hideSkeleton('skeletonAssess2');
+
+  // Show the demo assessment and the empty state as appropriate
+  // (Real Firestore assessment data will replace these in a future revision)
+  const demo  = document.getElementById('demoAssessment');
+  const empty = document.getElementById('assessmentsEmpty');
+  if (demo)  demo.classList.remove('hidden');
+  if (empty) empty.classList.add('hidden');
+}
+
 function setEl(id, value) {
   const el = document.getElementById(id);
   if (el) el.textContent = value;
@@ -628,6 +666,9 @@ function initMessaging(uid) {
 function renderConvoList() {
   const list = document.getElementById('convoList');
   if (!list) return;
+
+  // Dismiss skeleton conversation items on first real render
+  ['skeletonConvo1','skeletonConvo2','skeletonConvo3'].forEach(id => hideSkeleton(id));
 
   const entries = Object.entries(conversationsCache)
     .sort((a, b) => (b[1].lastMessageTime || 0) - (a[1].lastMessageTime || 0));

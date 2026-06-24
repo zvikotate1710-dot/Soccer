@@ -100,9 +100,82 @@
         <button class="btn btn-ghost" onclick="clearFilters()">Clear Filters</button>
       </div>
  
-      <!-- PLAYER GRID -->
+      <!-- PLAYER GRID — skeleton cards shown while players load -->
       <div class="player-grid" id="playerGrid">
-        <!-- Populated by JS -->
+        <div class="skeleton-player-card" id="skeletonPlayer1">
+          <div class="skeleton-player-top">
+            <div class="skeleton skeleton-player-avatar"></div>
+            <div class="skeleton-player-info">
+              <div class="skeleton skeleton-line-md"></div>
+              <div class="skeleton skeleton-line-sm"></div>
+            </div>
+          </div>
+          <div class="skeleton-player-badges">
+            <div class="skeleton skeleton-badge"></div>
+            <div class="skeleton skeleton-badge"></div>
+            <div class="skeleton skeleton-badge"></div>
+          </div>
+          <div class="skeleton-player-footer">
+            <div class="skeleton skeleton-line-sm" style="width:60px;"></div>
+            <div class="skeleton skeleton-line-sm" style="width:70px;"></div>
+            <div class="skeleton skeleton-line-sm" style="width:50px;"></div>
+          </div>
+        </div>
+        <div class="skeleton-player-card" id="skeletonPlayer2">
+          <div class="skeleton-player-top">
+            <div class="skeleton skeleton-player-avatar"></div>
+            <div class="skeleton-player-info">
+              <div class="skeleton skeleton-line-md"></div>
+              <div class="skeleton skeleton-line-sm"></div>
+            </div>
+          </div>
+          <div class="skeleton-player-badges">
+            <div class="skeleton skeleton-badge"></div>
+            <div class="skeleton skeleton-badge"></div>
+          </div>
+          <div class="skeleton-player-footer">
+            <div class="skeleton skeleton-line-sm" style="width:60px;"></div>
+            <div class="skeleton skeleton-line-sm" style="width:70px;"></div>
+            <div class="skeleton skeleton-line-sm" style="width:50px;"></div>
+          </div>
+        </div>
+        <div class="skeleton-player-card" id="skeletonPlayer3">
+          <div class="skeleton-player-top">
+            <div class="skeleton skeleton-player-avatar"></div>
+            <div class="skeleton-player-info">
+              <div class="skeleton skeleton-line-md"></div>
+              <div class="skeleton skeleton-line-sm"></div>
+            </div>
+          </div>
+          <div class="skeleton-player-badges">
+            <div class="skeleton skeleton-badge"></div>
+            <div class="skeleton skeleton-badge"></div>
+            <div class="skeleton skeleton-badge"></div>
+          </div>
+          <div class="skeleton-player-footer">
+            <div class="skeleton skeleton-line-sm" style="width:60px;"></div>
+            <div class="skeleton skeleton-line-sm" style="width:70px;"></div>
+            <div class="skeleton skeleton-line-sm" style="width:50px;"></div>
+          </div>
+        </div>
+        <div class="skeleton-player-card" id="skeletonPlayer4">
+          <div class="skeleton-player-top">
+            <div class="skeleton skeleton-player-avatar"></div>
+            <div class="skeleton-player-info">
+              <div class="skeleton skeleton-line-md"></div>
+              <div class="skeleton skeleton-line-sm"></div>
+            </div>
+          </div>
+          <div class="skeleton-player-badges">
+            <div class="skeleton skeleton-badge"></div>
+            <div class="skeleton skeleton-badge"></div>
+          </div>
+          <div class="skeleton-player-footer">
+            <div class="skeleton skeleton-line-sm" style="width:60px;"></div>
+            <div class="skeleton skeleton-line-sm" style="width:70px;"></div>
+            <div class="skeleton skeleton-line-sm" style="width:50px;"></div>
+          </div>
+        </div>
       </div>
  
       <div class="empty-state hidden" id="noResults">
@@ -158,15 +231,41 @@
     <!-- COACH DASHBOARD OVERVIEW -->
     <section class="dash-section" id="coach-dashboard">
       <h3 class="section-label" style="margin-bottom:20px;">Coach Dashboard</h3>
-      <div class="stats-row" style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;">
+ 
+      <!-- Stats skeleton -->
+      <div class="skeleton-stats" id="skeletonCoachStats" style="margin-bottom:20px;">
+        <div class="skeleton-stat-card"><div class="skeleton skeleton-stat-num"></div><div class="skeleton skeleton-stat-label"></div></div>
+        <div class="skeleton-stat-card"><div class="skeleton skeleton-stat-num"></div><div class="skeleton skeleton-stat-label"></div></div>
+        <div class="skeleton-stat-card"><div class="skeleton skeleton-stat-num"></div><div class="skeleton skeleton-stat-label"></div></div>
+        <div class="skeleton-stat-card"><div class="skeleton skeleton-stat-num"></div><div class="skeleton skeleton-stat-label"></div></div>
+      </div>
+ 
+      <div class="stats-row hidden" id="coachStatsRow" style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;">
         <div class="stat-card"><span class="stat-card-num" id="coachStatPlayers">8</span><span class="stat-card-label">Players Browsed</span></div>
         <div class="stat-card"><span class="stat-card-num" id="coachStatAssessments">3</span><span class="stat-card-label">Assessments Given</span></div>
         <div class="stat-card"><span class="stat-card-num" id="coachStatMessages">2</span><span class="stat-card-label">Active Chats</span></div>
         <div class="stat-card"><span class="stat-card-num" id="coachStatTrials">1</span><span class="stat-card-label">Trial Invites Sent</span></div>
       </div>
  
-      <!-- Coach Profile Card -->
-      <div class="profile-card">
+      <!-- Profile card skeleton -->
+      <div class="skeleton-profile" id="skeletonCoachProfile">
+        <div class="skeleton-profile-left">
+          <div class="skeleton skeleton-avatar"></div>
+          <div class="skeleton-profile-info">
+            <div class="skeleton skeleton-line-lg"></div>
+            <div class="skeleton skeleton-line-md"></div>
+            <div class="skeleton-badge-row">
+              <div class="skeleton skeleton-badge"></div>
+              <div class="skeleton skeleton-badge"></div>
+              <div class="skeleton skeleton-badge"></div>
+            </div>
+          </div>
+        </div>
+        <div class="skeleton skeleton-btn"></div>
+      </div>
+ 
+      <!-- Coach Profile Card — hidden until loadCoachProfile() runs -->
+      <div class="profile-card hidden" id="coachProfileCard">
         <div class="profile-left">
           <div class="profile-avatar" id="coachAvatar">CD</div>
           <div class="profile-info">
@@ -204,9 +303,40 @@
       <div class="messages-layout">
         <!-- Conversation List — populated live by coaches.js -->
         <div class="convo-list" id="coachConvoList">
-          <div class="empty-state">
-            <p>💬</p>
-            <p>No conversations yet. Message a player from their profile to start one.</p>
+          <!-- Skeleton convos shown while Realtime Database connects -->
+          <div class="skeleton-convo-item" id="skeletonCoachConvo1">
+            <div class="skeleton skeleton-convo-avatar"></div>
+            <div class="skeleton-convo-info">
+              <div class="skeleton skeleton-line-md"></div>
+              <div class="skeleton skeleton-line-sm"></div>
+              <div class="skeleton skeleton-line-sm" style="width:130px;"></div>
+            </div>
+            <div class="skeleton-convo-meta">
+              <div class="skeleton skeleton-line-sm" style="width:36px;"></div>
+              <div class="skeleton skeleton-dot"></div>
+            </div>
+          </div>
+          <div class="skeleton-convo-item" id="skeletonCoachConvo2">
+            <div class="skeleton skeleton-convo-avatar"></div>
+            <div class="skeleton-convo-info">
+              <div class="skeleton skeleton-line-md"></div>
+              <div class="skeleton skeleton-line-sm"></div>
+              <div class="skeleton skeleton-line-sm" style="width:100px;"></div>
+            </div>
+            <div class="skeleton-convo-meta">
+              <div class="skeleton skeleton-line-sm" style="width:36px;"></div>
+            </div>
+          </div>
+          <div class="skeleton-convo-item" id="skeletonCoachConvo3">
+            <div class="skeleton skeleton-convo-avatar"></div>
+            <div class="skeleton-convo-info">
+              <div class="skeleton skeleton-line-md"></div>
+              <div class="skeleton skeleton-line-sm"></div>
+              <div class="skeleton skeleton-line-sm" style="width:115px;"></div>
+            </div>
+            <div class="skeleton-convo-meta">
+              <div class="skeleton skeleton-line-sm" style="width:36px;"></div>
+            </div>
           </div>
         </div>
         <!-- Chat Window -->

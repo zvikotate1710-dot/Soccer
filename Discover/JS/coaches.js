@@ -117,6 +117,12 @@ function renderPlayers() {
 
   if (!grid) return;
 
+  // Dismiss skeleton player cards on first real render
+  ['skeletonPlayer1','skeletonPlayer2','skeletonPlayer3','skeletonPlayer4'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
   if (filteredPlayers.length === 0) {
     grid.innerHTML = '';
     noResults.classList.remove('hidden');
@@ -349,6 +355,15 @@ function loadCoachProfile() {
     const sProv = document.getElementById('coachSettingsProvince');
     if (sProv) sProv.value = user.province || '';
   }
+
+  // Dismiss profile and stats skeletons, reveal real content
+  const hide = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+  const show = (id) => { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); };
+
+  hide('skeletonCoachProfile');
+  hide('skeletonCoachStats');
+  show('coachProfileCard');
+  show('coachStatsRow');
 }
 
 /* =============================================
@@ -449,6 +464,12 @@ function initMessaging(uid) {
 function renderCoachConvoList() {
   const list = document.getElementById('coachConvoList');
   if (!list) return;
+
+  // Dismiss skeleton conversation items on first real render
+  ['skeletonCoachConvo1','skeletonCoachConvo2','skeletonCoachConvo3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
 
   const entries = Object.entries(conversationsCache)
     .sort((a, b) => (b[1].lastMessageTime || 0) - (a[1].lastMessageTime || 0));

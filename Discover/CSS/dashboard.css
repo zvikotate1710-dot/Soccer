@@ -829,3 +829,159 @@ textarea::placeholder { color: var(--muted); }
   .profile-left { flex-direction: column; text-align: center; }
   .profile-card { flex-direction: column; align-items: flex-start; }
 }
+
+/* =============================================
+   SKELETON LOADERS
+   ============================================= */
+ 
+/* Shimmer animation */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+ 
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--pitch-card) 25%,
+    rgba(255,255,255,0.06) 50%,
+    var(--pitch-card) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 6px;
+}
+ 
+/* ── Profile card skeleton ── */
+.skeleton-profile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--pitch-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+}
+.skeleton-profile-left { display: flex; align-items: center; gap: 18px; }
+.skeleton-avatar {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.skeleton-profile-info { display: flex; flex-direction: column; gap: 8px; }
+.skeleton-line { height: 12px; }
+.skeleton-line-lg { height: 18px; width: 160px; }
+.skeleton-line-md { height: 12px; width: 120px; }
+.skeleton-line-sm { height: 10px; width: 80px; }
+.skeleton-badge-row { display: flex; gap: 8px; }
+.skeleton-badge { height: 22px; width: 70px; border-radius: 20px; }
+.skeleton-btn  { height: 38px; width: 110px; border-radius: var(--radius-sm); }
+ 
+/* ── Stats row skeleton ── */
+.skeleton-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 0;
+}
+.skeleton-stat-card {
+  padding: 20px 28px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.skeleton-stat-card:last-child { border-right: none; }
+.skeleton-stat-num  { height: 36px; width: 48px; }
+.skeleton-stat-label{ height: 10px; width: 88px; }
+ 
+/* ── Video grid skeleton ── */
+.skeleton-video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.skeleton-video-card {
+  background: var(--pitch-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.skeleton-video-thumb { height: 130px; }
+.skeleton-video-info  { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+ 
+/* ── Assessment card skeleton ── */
+.skeleton-assessment {
+  background: var(--pitch-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 12px;
+}
+.skeleton-assessment-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.skeleton-coach-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
+.skeleton-assessment-body { display: flex; flex-direction: column; gap: 8px; }
+ 
+/* ── Conversation list skeleton ── */
+.skeleton-convo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.skeleton-convo-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
+.skeleton-convo-info   { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.skeleton-convo-meta   { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.skeleton-dot          { width: 18px; height: 18px; border-radius: 50%; }
+ 
+/* ── Player card skeleton (coaches page) ── */
+.skeleton-player-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.skeleton-player-card {
+  background: var(--pitch-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.skeleton-player-top  { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.skeleton-player-avatar { width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0; }
+.skeleton-player-info { display: flex; flex-direction: column; gap: 7px; }
+.skeleton-player-badges { display: flex; gap: 6px; margin-bottom: 14px; }
+.skeleton-player-footer {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+ 
+/* ── Filter bar skeleton ── */
+.skeleton-filter-bar {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  background: var(--pitch-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.skeleton-filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 150px; }
+.skeleton-filter-label { height: 10px; width: 60px; }
+.skeleton-filter-input { height: 40px; border-radius: var(--radius-sm); }
+ 
+/* Responsive skeleton adjustments */
+@media (max-width: 768px) {
+  .skeleton-stats { grid-template-columns: 1fr 1fr; }
+  .skeleton-stat-card { border-bottom: 1px solid var(--border); }
+}
+@media (max-width: 480px) {
+  .skeleton-stats { grid-template-columns: 1fr; }
+}
